@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Film Cutter</title>
+<style>
+  :root {
+    --bg:#f2f3f0; --panel:#ffffff; --border:#c9cfdd; --border-focus:#2a6fdb;
+    --text:#14203c; --muted:#5a6785; --chip-bg:#e7eaf2; --chip-text:#33415e;
+    --accent:#c8102e; --err:#c8102e; --warn:#9a6b00; --ok:#1d7a3a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:#0e1526; --panel:#182238; --border:#33415e; --border-focus:#6ea8ff;
+      --text:#eef1f8; --muted:#93a0bd; --chip-bg:#1d2a45; --chip-text:#cdd7ee;
+      --err:#ff6b7a; --warn:#ffce54; --ok:#7fd88f;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg:#0e1526; --panel:#182238; --border:#33415e; --border-focus:#6ea8ff;
+    --text:#eef1f8; --muted:#93a0bd; --chip-bg:#1d2a45; --chip-text:#cdd7ee;
+    --err:#ff6b7a; --warn:#ffce54; --ok:#7fd88f;
+  }
+  :root[data-theme="light"] {
+    --bg:#f2f3f0; --panel:#ffffff; --border:#c9cfdd; --border-focus:#2a6fdb;
+    --text:#14203c; --muted:#5a6785; --chip-bg:#e7eaf2; --chip-text:#33415e;
+    --err:#c8102e; --warn:#9a6b00; --ok:#1d7a3a;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+         background:var(--bg); color:var(--text); min-height:100vh; padding:16px; }
+  .wrap { max-width:900px; margin:0 auto; }
+  h1 { font-size:1.5rem; letter-spacing:.5px; text-transform:uppercase; margin:8px 0 2px; }
+  .sub { color:var(--muted); font-size:.85rem; margin-bottom:14px; }
+  .bar { display:flex; gap:8px; flex-wrap:wrap; }
+  input#call { flex:1; min-width:180px; font-size:1.6rem; font-weight:700; letter-spacing:2px;
+    text-transform:uppercase; padding:10px 14px; border-radius:10px; border:2px solid var(--border);
+    background:var(--panel); color:var(--text); outline:none; }
+  input#call:focus { border-color:var(--border-focus); }
+  button { font-size:1rem; font-weight:700; padding:10px 18px; border-radius:10px; border:none;
+    cursor:pointer; background:var(--accent); color:#fff; }
+  button:disabled { opacity:.45; cursor:default; }
+  button:focus-visible, .chip:focus-visible { outline:2px solid var(--border-focus); outline-offset:2px; }
+  .recent-wrap { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:10px; }
+  .recent-label { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); }
+  .chips { display:flex; gap:6px; flex-wrap:wrap; margin:10px 0 4px; }
+  .chip { background:var(--chip-bg); border:1px solid var(--border); color:var(--chip-text);
+    padding:5px 10px; border-radius:999px; font-size:.85rem; cursor:pointer; }
+  #msg { min-height:1.4em; margin:8px 2px; font-size:.95rem; }
+  #msg.err { color:var(--err); }
+  #msg.warn { color:var(--warn); }
+  #msg.ok { color:var(--ok); }
+  canvas { width:100%; height:auto; border-radius:12px; display:block; margin-top:6px;
+    box-shadow:0 6px 24px rgba(0,0,0,.35); }
+  .ver { font-size:.72rem; color:var(--muted); opacity:.65; margin-left:6px; white-space:nowrap; }
+  .family { font-size:.85rem; margin:-6px 0 14px; }
+  .family a { color:var(--border-focus); }
+  .film { color:var(--text); font-size:.92rem; margin-top:18px; }
+  .film summary { font-size:1rem; text-transform:uppercase; letter-spacing:.5px; }
+  .film-note { color:var(--muted); margin:2px 0 10px; }
+  .filebtn { font-size:1rem; font-weight:700; padding:10px 18px; border-radius:10px; cursor:pointer;
+    background:var(--chip-bg); color:var(--chip-text); border:1px solid var(--border); }
+  .film button.sm { font-size:.85rem; padding:6px 12px; background:var(--chip-bg); color:var(--chip-text);
+    border:1px solid var(--border); }
+  .film label.chk, .film label.sens { display:flex; align-items:center; gap:6px; font-size:.85rem; color:var(--muted); }
+  .film-grid { display:grid; grid-template-columns:1fr; gap:10px; margin-top:10px; }
+  @media (min-width:760px) { .film-grid.has-diag { grid-template-columns:3fr 2fr; align-items:start; } }
+  .film video { width:100%; border-radius:12px; background:#000; display:block; }
+  .film canvas { box-shadow:none; margin-top:0; }
+  #fTl { width:100%; height:64px; border-radius:8px; margin-top:10px; cursor:pointer; }
+  .film-ctl { margin-top:8px; align-items:center; }
+  #fMsg { min-height:1.3em; margin:8px 2px 0; color:var(--muted); }
+  #fList { max-height:340px; overflow-y:auto; margin-top:8px; border:1px solid var(--border); border-radius:10px; }
+  #fList:empty { display:none; }
+  .play { display:flex; align-items:center; gap:6px; padding:5px 8px; border-bottom:1px solid var(--border); }
+  .play:last-child { border-bottom:none; }
+  .play.cur { background:var(--chip-bg); }
+  .play .pn { width:1.8em; flex:none; font-weight:700; text-align:right; }
+  .play .pt { flex:1; min-width:0; font-variant-numeric:tabular-nums; color:var(--muted); cursor:pointer; }
+  .play.long .pt::after { content:" · long — check"; color:var(--warn); }
+  .play input { width:7.5em; min-width:4.5em; flex:0 1 7.5em; font-size:.9rem; font-weight:700; text-transform:uppercase; padding:4px 8px;
+    border-radius:8px; border:1px solid var(--border); background:var(--panel); color:var(--text); }
+  .play input.bad { border-color:var(--err); }
+  .play button { font-size:.8rem; padding:4px 7px; flex:none; border-radius:8px; background:transparent;
+    color:var(--chip-text); border:1px solid var(--border); }
+</style>
+</head>
+<body>
+<div class="wrap film">
+  <h1>🎬 Film Cutter</h1>
+  <div class="sub">Open a full game — get every play, with the dead time cut out.
+    <span class="ver">v2026.10.27</span></div>
+  <div class="family">Same family as <a href="../FormationDrawer/">🏈 Formation Drawer</a></div>
+
+    <p class="film-note">Open a game file from this device (it never gets uploaded). <b>Find plays</b> scans
+      through it watching for the snap, then playback skips the dead time between plays. Type a formation call on any play to
+      see its diagram (from Formation Drawer) beside the video. Works best on a computer.</p>
+    <div class="bar" style="align-items:center">
+      <label class="filebtn">Open game file<input type="file" id="fFile" accept="video/*" hidden></label>
+      <button id="fScan" disabled>Find plays</button>
+      <label class="sens" title="Higher finds more plays">Sensitivity
+        <input type="range" id="fSens" min="0" max="1" step="0.05" value="0.5"></label>
+    </div>
+    <div id="fMsg"></div>
+    <div id="fWork" hidden>
+      <div class="film-grid" id="fGrid">
+        <video id="fv" controls playsinline preload="metadata"></video>
+        <canvas id="fDiag" hidden></canvas>
+      </div>
+      <canvas id="fTl"></canvas>
+      <div class="bar film-ctl">
+        <button class="sm" id="fPrev" title="Previous play ( , )">◀ Prev</button>
+        <button class="sm" id="fNext" title="Next play ( . )">Next ▶</button>
+        <label class="chk"><input type="checkbox" id="fSkip" checked> Skip dead time</label>
+        <button class="sm" id="fAdd">+ Play here</button>
+        <button class="sm" id="fCsv">Download CSV</button>
+        <button class="sm" id="fSh" title="A Mac Terminal script that cuts every play into its own .mp4">Download clip script</button>
+      </div>
+      <div id="fList"></div>
+    </div>
+</div>
+
+<script>
+"use strict";
+
+/* ---------- film: cut a game into plays ---------- */
+
+// A game file is opened locally (object URL, never uploaded). "Find plays" seeks
+// through it and grabs a tiny grayscale frame every STEP seconds; the share of pixels
+// that changed since the last grab is the motion score. (Fast-forward playback was
+// tried first: browsers skip and repeat frames at 8-16x, which jittered play edges by
+// seconds and sometimes lost a whole play. Seeking is exact.) Plays are the stretches
+// where smoothed motion clears a threshold set by the Sensitivity slider, so a
+// re-detect after moving the slider needs no rescan.
+const STEP = 1;                    // seconds of game time between motion samples
+const PRE = 2, POST = 2;           // seconds kept before the snap and after the whistle
+const SW = 96, SH = 54;            // sample frame size
+
+const fv = document.getElementById("fv");
+const fFile = document.getElementById("fFile");
+const fScan = document.getElementById("fScan");
+const fSens = document.getElementById("fSens");
+const fMsg = document.getElementById("fMsg");
+const fWork = document.getElementById("fWork");
+const fGrid = document.getElementById("fGrid");
+const fDiag = document.getElementById("fDiag");
+const fTl = document.getElementById("fTl");
+const fSkip = document.getElementById("fSkip");
+const fList = document.getElementById("fList");
+
+let fKey = null, fName = "", fUrl = null;
+let motion = [];                   // motion[i] = changed pixels (per mille) ending at i*STEP
+let det = null;                    // {sm, thr, max} from the last detect, for the timeline
+let plays = [];                    // [{s, e, call}] in seconds, sorted by start
+let edited = false;                // true once plays were touched by hand
+let cur = -1, scanning = null;
+
+const scv = document.createElement("canvas");
+scv.width = SW; scv.height = SH;
+const sctx = scv.getContext("2d", {willReadFrequently: true});
+
+function fmt(t) {
+  const h = Math.floor(t / 3600), m = Math.floor(t / 60) % 60, s = t % 60;
+  const ss = s.toFixed(1).padStart(4, "0");
+  return h ? `${h}:${String(m).padStart(2, "0")}:${ss}` : `${m}:${ss}`;
+}
+function say(text) { fMsg.textContent = text; }
+
+/* Diagrams come from Formation Drawer itself, loaded hidden from the same site
+   (thadmoren.github.io), so the formation rules live in one place. Opened as a local
+   file, or before it loads, calls are kept as plain text with no diagram. */
+const FD_URL = "../FormationDrawer/";
+let fd = null;
+const fdFrame = document.createElement("iframe");
+fdFrame.hidden = true; fdFrame.src = FD_URL;
+fdFrame.addEventListener("load", () => {
+  try { if (fdFrame.contentWindow.parseCall) { fd = fdFrame.contentWindow; renderPlays(); showDiag(); } } catch (e) {}
+});
+document.body.appendChild(fdFrame);
+function callOk(call) { return !!call && (!fd || fd.parseCall(call).err === undefined); }
+
+function grab() {
+  sctx.drawImage(fv, 0, 0, SW, SH);
+  const d = sctx.getImageData(0, 0, SW, SH).data, g = new Uint8Array(SW * SH);
+  for (let i = 0; i < g.length; i++) g[i] = (d[i*4] * 3 + d[i*4+1] * 6 + d[i*4+2]) / 10;
+  return g;
+}
+function changed(a, b) {           // per mille of pixels whose luma moved noticeably
+  let n = 0;
+  for (let i = 0; i < a.length; i++) if (Math.abs(a[i] - b[i]) > 18) n++;
+  return Math.round(n / a.length * 1000);
+}
+
+/* --- saving: per file, keyed by name + size --- */
+function save() {
+  if (!fKey) return;
+  try { localStorage.setItem(fKey, JSON.stringify({motion, plays, edited, sens: fSens.value})); } catch (e) {}
+}
+function restore() {
+  let d = null;
+  try { d = JSON.parse(localStorage.getItem(fKey) || "null"); } catch (e) {}
+  motion = (d && d.motion) || []; plays = (d && d.plays) || []; edited = !!(d && d.edited);
+  if (d && d.sens) fSens.value = d.sens;
+  det = motion.length ? detect().det : null;
+}
+
+/* --- scanning --- */
+function scan() {
+  if (scanning) { scanning(); return; }
+  const dur = fv.duration;
+  // pick up where a stopped scan left off; otherwise start over
+  let i = motion.length;
+  if (i * STEP >= dur - STEP) {
+    if (edited && plays.length && !confirm("Rescan and replace the plays you've edited?")) return;
+    i = 0;
+  }
+  if (!i) { motion = []; plays = []; cur = -1; edited = false; det = null; renderPlays(); }
+  let prev = null, stopped = false;
+  const t0 = performance.now(), i0 = i;
+
+  const finish = () => {
+    if (stopped) return;
+    stopped = true; scanning = null;
+    fScan.textContent = i * STEP >= dur - STEP ? "Find plays" : "Continue scan";
+    runDetect();
+    if (fScan.textContent !== "Find plays") say(fMsg.textContent + " Scan stopped at " + fmt(i * STEP) + ".");
+    fv.currentTime = plays.length ? plays[0].s : 0;
+  };
+  const seek = t => new Promise(res => {
+    fv.addEventListener("seeked", res, {once: true});
+    fv.currentTime = t;
+  });
+  (async () => {
+    fv.pause();
+    if (i) { await seek((i - 1) * STEP); prev = grab(); }
+    for (; !stopped && i * STEP < dur - STEP / 2; i++) {
+      await seek(i * STEP);
+      if (stopped) break;
+      const g = grab();
+      if (prev) motion[i] = changed(prev, g);
+      else motion[i] = 0;
+      prev = g;
+      if (i % 20 === 0) {
+        const rate = (i - i0 + 1) / (performance.now() - t0), left = (dur / STEP - i) / rate / 1000;
+        say(`Scanning… ${Math.floor(i * STEP / dur * 100)}%  (${fmt(i * STEP)} of ${fmt(dur)}, about ${Math.ceil(left / 60)} min left). Stop keeps what's scanned; you can continue later.`);
+        drawTl();
+        if (i % 120 === 0) save();
+      }
+    }
+    finish();
+  })();
+  scanning = finish;
+  fScan.textContent = "Stop";
+}
+
+/* --- detection --- */
+function detect() {
+  const n = motion.length;
+  const raw = new Array(n);
+  for (let i = 0; i < n; i++) raw[i] = motion[i] || 0;
+  // median of 3 knocks out single-sample spikes (camera cuts), then a 3 s average
+  const med = raw.map((v, i) => [raw[i-1] ?? v, v, raw[i+1] ?? v].sort((a, b) => a - b)[1]);
+  const sm = med.map((v, i) => {
+    let s = 0, c = 0;
+    for (let j = Math.max(0, i - 1); j <= Math.min(n - 1, i + 1); j++) { s += med[j]; c++; }
+    return s / c;
+  });
+  const sorted = [...sm].sort((a, b) => a - b);
+  const lo = sorted[Math.floor(n * 0.5)] || 0, hi = sorted[Math.floor(n * 0.97)] || 0;
+  const thr = lo + Math.max(hi - lo, 4) * (0.6 - fSens.value * 0.55);
+
+  let segs = [];
+  for (let i = 0; i < n; i++) {
+    if (sm[i] <= thr) continue;
+    const s = (i - 1) * STEP;
+    while (i < n && sm[i] > thr) i++;
+    segs.push({s, e: i * STEP});
+  }
+  const merged = [];
+  for (const g of segs) {                       // short dips inside a play aren't dead time
+    const p = merged[merged.length - 1];
+    if (p && g.s - p.e < 4) p.e = g.e; else merged.push({...g});
+  }
+  const dur = fv.duration || n * STEP;
+  const out = [];
+  for (const g of merged) {
+    if (g.e - g.s < 3) continue;
+    const s = Math.max(0, g.s - PRE), e = Math.min(dur, g.e + POST);
+    const p = out[out.length - 1];
+    if (p && s <= p.e) p.e = e; else out.push({s, e, call: ""});
+  }
+  return {plays: out, det: {sm, thr, max: Math.max(hi * 1.4, thr * 1.5, 10)}};
+}
+function runDetect() {
+  const r = detect();
+  plays = r.plays; det = r.det; edited = false; cur = -1;
+  renderPlays(); save(); drawTl();
+  const total = plays.reduce((a, p) => a + p.e - p.s, 0);
+  say(plays.length
+    ? `${plays.length} plays · ${fmt(total)} of action out of ${fmt(fv.duration)}. Sensitivity higher = more plays.`
+    : "No plays found — try raising Sensitivity.");
+}
+
+/* --- play list --- */
+function renderPlays() {
+  fList.innerHTML = "";
+  plays.forEach((p, i) => {
+    const row = document.createElement("div");
+    row.className = "play" + (i === cur ? " cur" : "") + (p.e - p.s > 30 ? " long" : "");
+    const pn = document.createElement("span"); pn.className = "pn"; pn.textContent = i + 1;
+    const pt = document.createElement("span"); pt.className = "pt";
+    pt.textContent = `${fmt(p.s)} · ${Math.round(p.e - p.s)}s`;
+    pt.title = "Play from here";
+    pt.addEventListener("click", () => goTo(i, true));
+    const ci = document.createElement("input");
+    ci.placeholder = "call"; ci.value = p.call || "";
+    ci.autocapitalize = "characters"; ci.spellcheck = false;
+    ci.className = p.call && !callOk(p.call) ? "bad" : "";
+    ci.addEventListener("input", () => {
+      p.call = ci.value.trim().toUpperCase().replace(/\s+/g, " ");
+      ci.className = p.call && !callOk(p.call) ? "bad" : "";
+      edited = true; save();
+      if (i === cur) showDiag();
+    });
+    ci.addEventListener("focus", () => { if (i !== cur) setCur(i); });
+    const btn = (lab, title, fn) => {
+      const b = document.createElement("button"); b.type = "button";
+      b.textContent = lab; b.title = title; b.addEventListener("click", fn); return b;
+    };
+    row.append(pn, pt, ci,
+      btn("▶", "Play from here", () => goTo(i, true)),
+      btn("⇤", "Start here — set to the video's current time ( [ )", () => setEdge(i, "s")),
+      btn("⇥", "End here — set to the video's current time ( ] )", () => setEdge(i, "e")),
+      btn("✕", "Delete play", () => {
+        plays.splice(i, 1); if (cur >= plays.length) cur = plays.length - 1;
+        edited = true; renderPlays(); save(); drawTl();
+      }));
+    fList.appendChild(row);
+  });
+}
+function setCur(i) {
+  cur = i;
+  [...fList.children].forEach((r, j) => r.classList.toggle("cur", j === i));
+  const row = fList.children[i];
+  if (row && (row.offsetTop < fList.scrollTop || row.offsetTop + row.offsetHeight > fList.scrollTop + fList.clientHeight))
+    fList.scrollTop = row.offsetTop - fList.clientHeight / 3;
+  showDiag(); drawTl();
+}
+function goTo(i, play) {
+  if (i < 0 || i >= plays.length) return;
+  setCur(i);
+  fv.currentTime = plays[i].s;
+  if (play) fv.play();
+}
+function setEdge(i, edge) {
+  const p = plays[i]; if (!p) return;
+  const t = fv.currentTime;
+  if (edge === "s") { if (t >= p.e) return say("Start has to be before the end."); p.s = t; }
+  else { if (t <= p.s) return say("End has to be after the start."); p.e = t; }
+  plays.sort((a, b) => a.s - b.s); cur = plays.indexOf(p);
+  edited = true; renderPlays(); save(); drawTl();
+}
+function addPlay() {
+  const t = fv.currentTime;
+  const p = {s: t, e: Math.min(fv.duration, t + 8), call: ""};
+  plays.push(p); plays.sort((a, b) => a.s - b.s);
+  edited = true; renderPlays(); setCur(plays.indexOf(p)); save();
+}
+
+// the current play's call, drawn by Formation Drawer and copied beside the video
+function showDiag() {
+  const p = plays[cur];
+  if (!fd || !p || !callOk(p.call)) { fDiag.hidden = true; fGrid.classList.remove("has-diag"); return; }
+  fd.document.getElementById("call").value = p.call; fd.update();
+  const cv = fd.document.getElementById("cv");
+  fDiag.width = cv.width; fDiag.height = cv.height;
+  fDiag.getContext("2d").drawImage(cv, 0, 0);
+  fDiag.hidden = false; fGrid.classList.add("has-diag");
+}
+
+/* --- timeline: motion curve, threshold, plays, playhead --- */
+let tlQueued = false;
+function drawTl() {
+  if (tlQueued) return;
+  tlQueued = true;
+  requestAnimationFrame(() => {
+    tlQueued = false;
+    const dpr = window.devicePixelRatio || 1, w = fTl.clientWidth, h = fTl.clientHeight;
+    if (!w) return;
+    if (fTl.width !== Math.round(w * dpr)) { fTl.width = Math.round(w * dpr); fTl.height = Math.round(h * dpr); }
+    const c = fTl.getContext("2d");
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const css = getComputedStyle(document.documentElement), v = k => css.getPropertyValue(k).trim();
+    const dur = fv.duration || 1, X = t => t / dur * w;
+    c.fillStyle = v("--chip-bg"); c.fillRect(0, 0, w, h);
+    plays.forEach((p, i) => {
+      c.globalAlpha = i === cur ? 0.6 : 0.28;
+      c.fillStyle = v("--border-focus"); c.fillRect(X(p.s), 0, Math.max(1, X(p.e) - X(p.s)), h);
+    });
+    c.globalAlpha = 1;
+    const sm = det ? det.sm : motion, max = det ? det.max : 300;
+    if (sm.length) {
+      c.strokeStyle = v("--muted"); c.lineWidth = 1; c.beginPath();
+      // one point per pixel column (the column's peak) keeps 3 hours drawable
+      const per = Math.max(1, sm.length / w);
+      for (let x = 0; x < Math.min(w, sm.length); x++) {
+        let pk = 0;
+        for (let j = Math.floor(x * per); j < Math.floor((x + 1) * per); j++) pk = Math.max(pk, sm[j] || 0);
+        const y = h - Math.min(1, pk / max) * (h - 4);
+        x ? c.lineTo(X(x * per * STEP), y) : c.moveTo(0, y);
+      }
+      c.stroke();
+    }
+    if (det) {
+      c.strokeStyle = v("--warn"); c.setLineDash([4, 4]); c.beginPath();
+      const y = h - Math.min(1, det.thr / det.max) * (h - 4);
+      c.moveTo(0, y); c.lineTo(w, y); c.stroke(); c.setLineDash([]);
+    }
+    c.fillStyle = v("--accent"); c.fillRect(X(fv.currentTime) - 1, 0, 2, h);
+  });
+}
+
+/* --- exports --- */
+function download(name, text, type) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([text], {type}));
+  a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+const base = () => fName.replace(/\.[^.]+$/, "");
+const clipName = (p, i) => `play-${String(i + 1).padStart(3, "0")}` +
+  (callOk(p.call) ? "-" + p.call.replace(/[^A-Z0-9]+/g, "-") : "") + ".mp4";
+
+function exportCsv() {
+  const rows = [["play", "start", "end", "seconds", "call", "start_s", "end_s"]];
+  plays.forEach((p, i) => rows.push([i + 1, fmt(p.s), fmt(p.e), (p.e - p.s).toFixed(1),
+                                     `"${(p.call || "").replace(/"/g, '""')}"`, p.s.toFixed(2), p.e.toFixed(2)]));
+  download(base() + "-plays.csv", rows.map(r => r.join(",")).join("\n") + "\n", "text/csv");
+}
+
+// A bash script that cuts each play into its own .mp4 with ffmpeg, then joins them
+// into one condensed game. Clips are re-encoded so cuts land on the exact frame.
+function exportScript() {
+  const q = s => "'" + s.replace(/'/g, "'\\''") + "'";
+  const lines = [
+    "#!/bin/bash",
+    `# Cuts ${fName} into ${plays.length} plays, plus a condensed game with the dead time removed.`,
+    "# Run it in Terminal:  bash <this script> <the game file>",
+    "# (type bash and a space, then drag this script and the video into the Terminal window)",
+    "# Needs ffmpeg — on a Mac: brew install ffmpeg",
+    "set -e",
+    `IN="\${1:-$(dirname "$0")/${fName.replace(/["$`\\]/g, "\\$&")}}"`,
+    'command -v ffmpeg >/dev/null || { echo "ffmpeg not found. Install it with: brew install ffmpeg"; exit 1; }',
+    '[ -f "$IN" ] || { echo "Cannot find the game file: $IN"; echo "Usage: bash $0 /path/to/game.mp4"; exit 1; }',
+    'OUT="${IN%.*} plays"',
+    'mkdir -p "$OUT"',
+    'clip() {',
+    '  echo "$1"',
+    '  ffmpeg -hide_banner -loglevel error -y -ss "$2" -i "$IN" -t "$3" \\',
+    '    -c:v libx264 -preset veryfast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 128k -movflags +faststart "$OUT/$1" </dev/null',
+    '}',
+    ...plays.map((p, i) => `clip ${q(clipName(p, i))} ${p.s.toFixed(2)} ${(p.e - p.s).toFixed(2)}`),
+    'cd "$OUT"',
+    "for f in play-*.mp4; do echo \"file '$f'\"; done > list.txt",
+    'ffmpeg -hide_banner -loglevel error -y -f concat -safe 0 -i list.txt -c copy "../$(basename "${IN%.*}") condensed.mp4"',
+    'rm list.txt',
+    'echo "Done: $OUT"',
+    "",
+  ];
+  download("cut-" + base().replace(/[^\w.-]+/g, "-") + ".sh", lines.join("\n"), "text/x-shellscript");
+  say("Script saved. In Terminal: type bash and a space, drag in the script, then the game file, and press Return.");
+}
+
+/* --- wiring --- */
+fFile.addEventListener("change", () => {
+  const f = fFile.files[0]; if (!f) return;
+  if (scanning) scanning();
+  if (fUrl) URL.revokeObjectURL(fUrl);
+  fUrl = URL.createObjectURL(f);
+  fName = f.name; fKey = "filmCutter:" + f.name + ":" + f.size;
+  cur = -1; fv.src = fUrl;
+  fWork.hidden = false; fScan.disabled = true;
+  say("Loading " + f.name + "…");
+});
+fv.addEventListener("loadedmetadata", () => {
+  fScan.disabled = false;
+  restore(); renderPlays(); drawTl();
+  const partial = motion.length && motion.length * STEP < fv.duration - STEP;
+  fScan.textContent = partial ? "Continue scan" : "Find plays";
+  say(partial ? `Scanned up to ${fmt(motion.length * STEP)} of ${fmt(fv.duration)}. Tap Continue scan to finish.`
+      : plays.length ? `${plays.length} plays saved for this file. Find plays again to rescan.`
+      : `${fmt(fv.duration)} of film. Tap Find plays — it takes a few minutes per hour of film.`);
+});
+fv.addEventListener("error", () => {
+  if (fv.src) say("This browser can't play that file. An .mp4 (H.264) works everywhere.");
+});
+fScan.addEventListener("click", scan);
+fSens.addEventListener("change", () => {
+  if (!motion.length || scanning) return;
+  if (edited && plays.length && !confirm("Re-detect plays and lose your edits?")) { save(); return; }
+  const calls = plays.map(p => p.call);
+  runDetect();
+  if (calls.some(Boolean) && calls.length === plays.length) { plays.forEach((p, i) => p.call = calls[i]); renderPlays(); save(); }
+});
+document.getElementById("fPrev").addEventListener("click", () => goTo(cur > 0 ? cur - 1 : 0, !fv.paused));
+document.getElementById("fNext").addEventListener("click", () => goTo(cur + 1 < plays.length ? cur + 1 : cur, !fv.paused));
+document.getElementById("fAdd").addEventListener("click", addPlay);
+document.getElementById("fCsv").addEventListener("click", exportCsv);
+document.getElementById("fSh").addEventListener("click", exportScript);
+fTl.addEventListener("click", e => {
+  if (scanning || !fv.duration) return;
+  const r = fTl.getBoundingClientRect();
+  fv.currentTime = (e.clientX - r.left) / r.width * fv.duration;
+});
+window.addEventListener("resize", drawTl);
+
+// with Skip dead time on, playback that drifts out of a play jumps to the next one
+fv.addEventListener("timeupdate", () => {
+  drawTl();
+  if (scanning || !plays.length) return;
+  const t = fv.currentTime;
+  let i = plays.findIndex(p => t >= p.s && t < p.e);
+  if (i < 0 && fSkip.checked && !fv.paused && !fv.seeking) {
+    i = plays.findIndex(p => p.s > t);
+    if (i >= 0) fv.currentTime = plays[i].s; else fv.pause();
+  }
+  if (i >= 0 && i !== cur) setCur(i);
+});
+
+document.addEventListener("keydown", e => {
+  if (!fv.src || e.metaKey || e.ctrlKey || e.target.closest("input:not([type=range]):not([type=checkbox])")) return;
+  const k = {",": () => goTo(cur - 1, !fv.paused), ".": () => goTo(cur + 1, !fv.paused),
+             "[": () => setEdge(cur, "s"), "]": () => setEdge(cur, "e")}[e.key];
+  if (k) { e.preventDefault(); k(); }
+});
+</script>
+
+</body>
+</html>
