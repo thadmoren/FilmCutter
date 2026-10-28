@@ -34,7 +34,17 @@ localStorage under `filmCutter:<name>:<size>`, and a stopped scan resumes from
 skip and repeat frames, which jittered edges by seconds and dropped whole plays in
 testing; seeking is exact.
 
-"Download clip script" writes a bash script of ffmpeg cuts (re-encoded so starts are
+**Export clips** (`exportClips`) runs ffmpeg.wasm from `vendor/` (see
+`vendor/README.md`): the game `File` is mounted with WORKERFS so ffmpeg reads slices on
+demand (verified on a 2.8 GB mp4, cutting past the 2 GB mark), and each play is a
+stream copy (`-ss` before `-i`, `-c copy`, `-avoid_negative_ts make_zero`), so a clip
+starts on the keyframe at or before its start. Clips keep the source container. Output
+goes to a `showDirectoryPicker` folder where it exists, else one download per clip.
+It is vendored, not CDN-loaded, because `FFmpeg` starts a module worker from its own
+URL and browsers refuse a cross-origin worker. Needs http(s), not `file://`. To test
+the folder path headlessly, stub `showDirectoryPicker` with `navigator.storage.getDirectory()`.
+
+"Mac clip script" writes a bash script of ffmpeg cuts (re-encoded so starts are
 frame-accurate) plus a concat into one condensed game.
 
 ## Testing

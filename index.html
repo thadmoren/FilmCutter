@@ -71,8 +71,10 @@
   @media (min-width:760px) { .film-grid.has-diag { grid-template-columns:3fr 2fr; align-items:start; } }
   .film video { width:100%; border-radius:12px; background:#000; display:block; }
   .film canvas { box-shadow:none; margin-top:0; }
+  [hidden] { display:none !important; }   /* base canvas/label display rules would beat it */
   #fTl { width:100%; height:64px; border-radius:8px; margin-top:10px; cursor:pointer; }
   .film-ctl { margin-top:8px; align-items:center; }
+  .film button.go { font-size:.85rem; padding:7px 14px; }
   #fMsg { min-height:1.3em; margin:8px 2px 0; color:var(--muted); }
   #fList { max-height:340px; overflow-y:auto; margin-top:8px; border:1px solid var(--border); border-radius:10px; }
   #fList:empty { display:none; }
@@ -93,12 +95,13 @@
 <div class="wrap film">
   <h1>🎬 Film Cutter</h1>
   <div class="sub">Open a full game — get every play, with the dead time cut out.
-    <span class="ver">v2026.10.27</span></div>
+    <span class="ver">v2026.10.28</span></div>
   <div class="family">Same family as <a href="../FormationDrawer/">🏈 Formation Drawer</a></div>
 
     <p class="film-note">Open a game file from this device (it never gets uploaded). <b>Find plays</b> scans
       through it watching for the snap, then playback skips the dead time between plays. Type a formation call on any play to
-      see its diagram (from Formation Drawer) beside the video. Works best on a computer.</p>
+      see its diagram (from Formation Drawer) beside the video. <b>Export clips</b> saves every play as its
+      own video file. Works best on a computer.</p>
     <div class="bar" style="align-items:center">
       <label class="filebtn">Open game file<input type="file" id="fFile" accept="video/*" hidden></label>
       <button id="fScan" disabled>Find plays</button>
@@ -117,8 +120,9 @@
         <button class="sm" id="fNext" title="Next play ( . )">Next ▶</button>
         <label class="chk"><input type="checkbox" id="fSkip" checked> Skip dead time</label>
         <button class="sm" id="fAdd">+ Play here</button>
+        <button class="go" id="fExp" title="Save every play as its own video file">Export clips</button>
         <button class="sm" id="fCsv">Download CSV</button>
-        <button class="sm" id="fSh" title="A Mac Terminal script that cuts every play into its own .mp4">Download clip script</button>
+        <button class="sm" id="fSh" title="A Mac Terminal script that re-encodes each play to .mp4 and also makes one condensed game">Mac clip script</button>
       </div>
       <div id="fList"></div>
     </div>
@@ -151,8 +155,9 @@ const fDiag = document.getElementById("fDiag");
 const fTl = document.getElementById("fTl");
 const fSkip = document.getElementById("fSkip");
 const fList = document.getElementById("fList");
+const fExp = document.getElementById("fExp");
 
-let fKey = null, fName = "", fUrl = null;
+let fKey = null, fName = "", fUrl = null, fFileObj = null;
 let motion = [];                   // motion[i] = changed pixels (per mille) ending at i*STEP
 let det = null;                    // {sm, thr, max} from the last detect, for the timeline
 let plays = [];                    // [{s, e, call}] in seconds, sorted by start
@@ -432,8 +437,8 @@ function download(name, text, type) {
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }
 const base = () => fName.replace(/\.[^.]+$/, "");
-const clipName = (p, i) => `play-${String(i + 1).padStart(3, "0")}` +
-  (callOk(p.call) ? "-" + p.call.replace(/[^A-Z0-9]+/g, "-") : "") + ".mp4";
+const clipName = (p, i, ext = ".mp4") => `play-${String(i + 1).padStart(3, "0")}` +
+  (callOk(p.call) ? "-" + p.call.replace(/[^A-Z0-9]+/g, "-") : "") + ext;
 
 function exportCsv() {
   const rows = [["play", "start", "end", "seconds", "call", "start_s", "end_s"]];
@@ -475,13 +480,73 @@ function exportScript() {
   say("Script saved. In Terminal: type bash and a space, drag in the script, then the game file, and press Return.");
 }
 
+// Cuts every play out of the game file in the browser with ffmpeg.wasm (vendor/).
+// Stream copy, no re-encode: fast and lossless, and a clip starts on the keyframe at
+// or just before its start, which the 2 s pad absorbs. The game file is mounted with
+// WORKERFS, so ffmpeg reads slices of it on demand instead of loading GBs into memory.
+// Clips go into a folder the user picks where the browser allows it (Chrome, Edge),
+// otherwise each one downloads.
+let exporting = null;
+async function exportClips() {
+  if (exporting) { exporting(); return; }
+  if (!plays.length || !fFileObj) return;
+  let dir = null;
+  if (window.showDirectoryPicker) {
+    try { dir = await showDirectoryPicker({id: "filmcutter", mode: "readwrite"}); }
+    catch (e) { if (e.name === "AbortError") return; }
+  } else if (plays.length > 1 &&
+             !confirm(`This browser saves each play as its own download (${plays.length} files). Go?`)) return;
+
+  const ext = (fName.match(/\.[^.]+$/) || [".mp4"])[0].toLowerCase();
+  const mp4ish = /^\.(mp4|m4v|mov)$/.test(ext);
+  let ff = null, stopped = false, done = 0;
+  const stop = () => { stopped = true; if (ff) ff.terminate(); };
+  exporting = stop; fExp.textContent = "Stop export";
+  try {
+    say("Loading the clip cutter (about 32 MB the first time, then it's cached)…");
+    const {FFmpeg} = await import("./vendor/ffmpeg/index.js");
+    ff = new FFmpeg();
+    const here = new URL("vendor/ffmpeg-core/", location.href).href;
+    await ff.load({coreURL: here + "ffmpeg-core.js", wasmURL: here + "ffmpeg-core.wasm"});
+    await ff.createDir("/in");
+    await ff.mount("WORKERFS", {files: [fFileObj]}, "/in");
+    for (let i = 0; i < plays.length && !stopped; i++) {
+      const p = plays[i], out = "/clip" + ext, name = clipName(p, i, ext);
+      say(`Exporting play ${i + 1} of ${plays.length}… (${name})`);
+      const code = await ff.exec(["-ss", p.s.toFixed(2), "-i", "/in/" + fFileObj.name,
+        "-t", (p.e - p.s).toFixed(2), "-map", "0:v?", "-map", "0:a?", "-c", "copy",
+        "-avoid_negative_ts", "make_zero", ...(mp4ish ? ["-movflags", "+faststart"] : []), out]);
+      if (code !== 0) throw new Error(`ffmpeg couldn't cut play ${i + 1}`);
+      const data = await ff.readFile(out);
+      await ff.deleteFile(out);
+      if (dir) {
+        const w = await (await dir.getFileHandle(name, {create: true})).createWritable();
+        await w.write(data); await w.close();
+      } else {
+        download(name, data, fFileObj.type || "video/mp4");
+        await new Promise(r => setTimeout(r, 400));   // browsers drop downloads fired too fast
+      }
+      done++;
+    }
+    say(stopped ? `Export stopped after ${done} of ${plays.length} plays.`
+                : `Exported ${done} plays${dir && dir.name ? ` to the "${dir.name}" folder` : ""}.`);
+  } catch (e) {
+    say(stopped ? `Export stopped after ${done} of ${plays.length} plays.`
+                : `Export failed${done ? ` after ${done} plays` : ""}: ${e.message || e}`);
+  } finally {
+    if (ff && !stopped) ff.terminate();
+    exporting = null; fExp.textContent = "Export clips";
+  }
+}
+
 /* --- wiring --- */
 fFile.addEventListener("change", () => {
   const f = fFile.files[0]; if (!f) return;
   if (scanning) scanning();
+  if (exporting) exporting();
   if (fUrl) URL.revokeObjectURL(fUrl);
   fUrl = URL.createObjectURL(f);
-  fName = f.name; fKey = "filmCutter:" + f.name + ":" + f.size;
+  fFileObj = f; fName = f.name; fKey = "filmCutter:" + f.name + ":" + f.size;
   cur = -1; fv.src = fUrl;
   fWork.hidden = false; fScan.disabled = true;
   say("Loading " + f.name + "…");
@@ -511,6 +576,7 @@ document.getElementById("fNext").addEventListener("click", () => goTo(cur + 1 < 
 document.getElementById("fAdd").addEventListener("click", addPlay);
 document.getElementById("fCsv").addEventListener("click", exportCsv);
 document.getElementById("fSh").addEventListener("click", exportScript);
+fExp.addEventListener("click", exportClips);
 fTl.addEventListener("click", e => {
   if (scanning || !fv.duration) return;
   const r = fTl.getBoundingClientRect();
