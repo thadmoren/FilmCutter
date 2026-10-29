@@ -36,7 +36,7 @@ scan** picks it up later, even after closing the tab.
   named with its number and call (e.g. `play-012-24B-I.mp4`). Picking a folder needs
   Chrome or Edge on a computer; other browsers download the clips one by one. Clips are cut
   without re-encoding, so it takes seconds and keeps full quality; a clip may start up
-  to a second or two early (it begins on the nearest keyframe). The cutter is about
+  to a second or two early (it begins on the nearest keyframe). Clips have no sound. The cutter is about
   32 MB and downloads the first time you export. Tested on a 2.8 GB file.
 - **Download CSV**: every play's start, end, length and call.
 - **Mac clip script**: a Terminal script that re-encodes each play to .mp4 with

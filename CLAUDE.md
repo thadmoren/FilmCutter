@@ -47,7 +47,7 @@ testing; seeking is exact.
 `vendor/README.md`): the game `File` is mounted with WORKERFS so ffmpeg reads slices on
 demand (verified on a 2.8 GB mp4, cutting past the 2 GB mark), and each play is a
 stream copy (`-ss` before `-i`, `-c copy`, `-avoid_negative_ts make_zero`), so a clip
-starts on the keyframe at or before its start. Clips keep the source container. Output
+starts on the keyframe at or before its start. Clips keep the source container and drop audio (`-an`; the owner doesn't want it). Output
 goes to a `showDirectoryPicker` folder where it exists, else one download per clip. On an
 unscanned film it asks for the folder first (needs the tap), then awaits `scan()` (which
 resolves true when the film is fully scanned), then exports: one tap per game.
