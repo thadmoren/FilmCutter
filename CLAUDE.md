@@ -46,7 +46,9 @@ testing; seeking is exact.
 The page is two steps (Choose game video, **Cut into clips**) plus a closed
 `<details id="fMore">` holding the review tools: Find plays, Sensitivity, the video,
 timeline, play list with calls, CSV and Mac script. The owner wants the two-step flow
-up front; keep the extras folded away.
+up front; keep the extras folded away. Under step 2, `#fNum` / `#fStart` choose clip
+names (`clipName`): `play-NNN` counting from the start number, or unnumbered
+`play-at-0h12m05s`; saved in localStorage under `filmCutter:names`.
 
 **Cut into clips** (`exportClips`) runs ffmpeg.wasm from `vendor/` (see
 `vendor/README.md`): the game `File` is mounted with WORKERFS so ffmpeg reads slices on

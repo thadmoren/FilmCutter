@@ -21,6 +21,10 @@ Two steps, on a computer in Chrome or Edge:
    keeps what's done and the next **Cut into clips** picks up there, even after closing
    the tab.
 
+Under step 2, **Number the clips, starting at** sets the first number (`play-001`,
+`play-002`, … or start at 101 to carry on from last week). Untick it and each clip is
+named by where it starts in the game instead (`play-at-0h12m05s`). It remembers your choice.
+
 How it finds plays: it steps through the film once per second and measures how much of
 the picture changed; the stretches with movement are plays. Each play runs from the
 break of the huddle (it looks back from the snap for the walk up to the line, at most
@@ -45,7 +49,7 @@ first time. Tested on a 2.8 GB file.
   Plays over 45 s are flagged "long — check" (halftime, injuries, band).
 - Type a formation call on a play (e.g. `24B I`) and its diagram, drawn by Formation
   Drawer, shows beside the video while that play runs.
-- Clips are named with their number and call (e.g. `play-012-24B-I.mp4`), so type
+- A play's call is added to its clip's name (e.g. `play-012-24B-I.mp4`), so type
   calls before **Cut into clips**.
 - **Download CSV**: every play's start, end, length and call.
 - **Mac clip script**: a Terminal script that re-encodes each play to .mp4 with
