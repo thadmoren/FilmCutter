@@ -107,7 +107,7 @@
 <div class="wrap film">
   <h1>🎬 Film Cutter</h1>
   <div class="sub">Open a full game — get every play, with the dead time cut out.
-    <span class="ver">v2026.10.29.5</span></div>
+    <span class="ver">v2026.10.29.6</span></div>
   <div class="family">Same family as <a href="../FormationDrawer/">🏈 Formation Drawer</a></div>
 
     <p class="film-note">Turns a full game into one video per play, from the break of the huddle to 5 s after
@@ -187,6 +187,7 @@ const fExp = document.getElementById("fExp");
 let fKey = null, fName = "", fUrl = null, fFileObj = null;
 let motion = [];                   // motion[i] = changed pixels (per mille) ending at i*STEP
 let red = [];                      // red[i] = bright-red pixels (per mille) in the top-right corner at i*STEP
+let lum = [];                      // lum[i] = mean brightness (0-255) at i*STEP; black = ad break
 let det = null;                    // {sm, thr, max} from the last detect, for the timeline
 let plays = [];                    // [{s, e, call}] in seconds, sorted by start
 let edited = false;                // true once plays were touched by hand
@@ -247,12 +248,12 @@ function changed(a, b) {           // per mille of pixels whose luma moved notic
 /* --- saving: per file, keyed by name + size --- */
 function save() {
   if (!fKey) return;
-  try { localStorage.setItem(fKey, JSON.stringify({motion, red, plays, edited, sens: fSens.value})); } catch (e) {}
+  try { localStorage.setItem(fKey, JSON.stringify({motion, red, lum, plays, edited, sens: fSens.value})); } catch (e) {}
 }
 function restore() {
   let d = null;
   try { d = JSON.parse(localStorage.getItem(fKey) || "null"); } catch (e) {}
-  motion = (d && d.motion) || []; red = (d && d.red) || []; plays = (d && d.plays) || []; edited = !!(d && d.edited);
+  motion = (d && d.motion) || []; red = (d && d.red) || []; lum = (d && d.lum) || []; plays = (d && d.plays) || []; edited = !!(d && d.edited);
   if (d && d.sens) fSens.value = d.sens;
   if (motion.length) { const r = detect(); det = r.det; if (!edited) plays = r.plays; }
   else det = null;
@@ -270,7 +271,7 @@ function scan() {
     if (edited && plays.length && !confirm("Rescan and replace the plays you've edited?")) return Promise.resolve(false);
     i = 0;
   }
-  if (!i) { motion = []; red = []; plays = []; cur = -1; edited = false; det = null; renderPlays(); }
+  if (!i) { motion = []; red = []; lum = []; plays = []; cur = -1; edited = false; det = null; renderPlays(); }
   let prev = null, stopped = false;
   const t0 = performance.now(), i0 = i;
 
@@ -297,6 +298,7 @@ function scan() {
       if (prev) motion[i] = changed(prev, g);
       else motion[i] = 0;
       red[i] = redness();
+      lum[i] = Math.round(g.reduce((a, v) => a + v, 0) / g.length);
       prev = g;
       if (i % 20 === 0) {
         const rate = (i - i0 + 1) / (performance.now() - t0), left = (dur / STEP - i) / rate / 1000;
@@ -334,21 +336,25 @@ function detect() {
   const rlo = rs[Math.floor(rs.length * 0.5)] || 0;
   const rflag = Array.from({length: n}, (_, i) => red[i] != null && red[i] > rlo + 10);
   const replay = rflag.map((v, i) => (rflag[i-1] ?? v) + v + (rflag[i+1] ?? v) >= 2);
+  // Black screens (ad breaks, around replays) are breaks too, along with the second
+  // after one, whose motion is just the cut from black back to the picture.
+  const dark = i => lum[i] != null && lum[i] < 20;
+  const brk = Array.from({length: n}, (_, i) => replay[i] || dark(i) || dark(i - 1));
 
-  // replay seconds never count as action, and a play never stretches across one
-  const act = i => sm[i] > thr && !replay[i];
+  // replay and black seconds never count as action, and a play never stretches across one
+  const act = i => sm[i] > thr && !brk[i];
   let segs = [];
   for (let i = 0; i < n; i++) {
     if (!act(i)) continue;
-    const s = (replay[i - 1] ? i : i - 1) * STEP;
+    const s = (brk[i - 1] ? i : i - 1) * STEP;
     while (i < n && act(i)) i++;
     segs.push({s, e: i * STEP});
   }
-  const replayIn = (a, b) => { for (let i = Math.round(a / STEP); i < b / STEP && i < n; i++) if (replay[i]) return true; return false; };
+  const brkIn = (a, b) => { for (let i = Math.round(a / STEP); i < b / STEP && i < n; i++) if (brk[i]) return true; return false; };
   const merged = [];
   for (const g of segs) {                       // short dips inside a play aren't dead time
     const p = merged[merged.length - 1];
-    if (p && g.s - p.e < 4 && !replayIn(p.e, g.s)) p.e = g.e; else merged.push({...g});
+    if (p && g.s - p.e < 4 && !brkIn(p.e, g.s)) p.e = g.e; else merged.push({...g});
   }
   const dur = fv.duration || n * STEP;
   let replays = 0;
@@ -369,14 +375,14 @@ function detect() {
     const floor = Math.max(0, prevEnd, g.s - HUDDLE_MAX);
     let s = Math.max(floor, g.s - PRE);
     let i = Math.round(g.s / STEP) - 1, still = 0;
-    while (i * STEP >= floor && !replay[i] && sm[i] <= walk && still < 4) { i--; still++; }   // the set
-    if (i * STEP >= floor && !replay[i] && sm[i] > walk) {
+    while (i * STEP >= floor && !brk[i] && sm[i] <= walk && still < 4) { i--; still++; }   // the set
+    if (i * STEP >= floor && !brk[i] && sm[i] > walk) {
       let quiet = 0;
-      while (i * STEP >= floor && !replay[i] && quiet < 2) { quiet = sm[i] > walk ? 0 : quiet + 1; i--; }
+      while (i * STEP >= floor && !brk[i] && quiet < 2) { quiet = sm[i] > walk ? 0 : quiet + 1; i--; }
       s = Math.min(s, Math.max(floor, (quiet === 2 ? i + quiet : i + 1) * STEP));
     }
     let e = Math.min(dur, g.e + POST), j = Math.round(g.e / STEP);
-    while (j * STEP < e && !replay[j]) j++;      // a replay cuts the tail short
+    while (j * STEP < e && !brk[j]) j++;         // a replay or black screen cuts the tail short
     e = Math.min(e, j * STEP);
     const p = out[out.length - 1];
     if (p && s <= p.e) p.e = e; else out.push({s, e, call: ""});
