@@ -107,7 +107,7 @@
 <div class="wrap film">
   <h1>🎬 Film Cutter</h1>
   <div class="sub">Open a full game — get every play, with the dead time cut out.
-    <span class="ver">v2026.10.29.6</span></div>
+    <span class="ver">v2026.10.29.7</span></div>
   <div class="family">Same family as <a href="../FormationDrawer/">🏈 Formation Drawer</a></div>
 
     <p class="film-note">Turns a full game into one video per play, from the break of the huddle to 5 s after
@@ -162,11 +162,13 @@
 // that changed since the last grab is the motion score. (Fast-forward playback was
 // tried first: browsers skip and repeat frames at 8-16x, which jittered play edges by
 // seconds and sometimes lost a whole play. Seeking is exact.) Plays are the stretches
-// where smoothed motion clears a threshold set by the Sensitivity slider, so a
-// re-detect after moving the slider needs no rescan.
+// where smoothed motion clears a threshold set by the Sensitivity slider and then
+// keeps going, so a re-detect after moving the slider needs no rescan.
 const STEP = 1;                    // seconds of game time between motion samples
 const PRE = 2, POST = 5;           // seconds kept before the snap (no huddle found) and after the whistle
 const HUDDLE_MAX = 20;             // furthest back from the snap a play can start (break of huddle)
+const BASE = 90;                   // seconds either side that set the local motion baseline
+const HOLD = 0.6;                  // a play's edges: how far back towards the baseline it may sag
 const SW = 96, SH = 54;            // sample frame size
 
 const fv = document.getElementById("fv");
@@ -187,6 +189,7 @@ const fExp = document.getElementById("fExp");
 let fKey = null, fName = "", fUrl = null, fFileObj = null;
 let motion = [];                   // motion[i] = changed pixels (per mille) ending at i*STEP
 let red = [];                      // red[i] = bright-red pixels (per mille) in the top-right corner at i*STEP
+let lum = [];                      // lum[i] = mean brightness (0-255) at i*STEP; black = ad break
 let det = null;                    // {sm, thr, max} from the last detect, for the timeline
 let plays = [];                    // [{s, e, call}] in seconds, sorted by start
 let edited = false;                // true once plays were touched by hand
@@ -195,6 +198,11 @@ let cur = -1, scanning = null, scanRun = null;   // scanRun: the running scan's 
 const scv = document.createElement("canvas");
 scv.width = SW; scv.height = SH;
 const sctx = scv.getContext("2d", {willReadFrequently: true});
+// Shrinking 1920x1440 to 96x54 the cheap way samples a handful of pixels per cell, so
+// a camera that barely moves still lands on different grass and the motion score
+// doubles. "high" averages the cell instead: on real film it halved the noise floor
+// and let quiet plays stand out.
+sctx.imageSmoothingQuality = "high";
 // Replays carry a red "replay" badge in the top-right corner. Each sample also counts
 // bright-red pixels in that corner; detect() flags samples well above the game's usual
 // level (so red seats or a red scoreboard that are always there don't count).
@@ -202,6 +210,7 @@ const RW = 48, RH = 27;            // top-right corner sample size
 const rcv = document.createElement("canvas");
 rcv.width = RW; rcv.height = RH;
 const rctx = rcv.getContext("2d", {willReadFrequently: true});
+rctx.imageSmoothingQuality = "high";
 
 function fmt(t) {
   const h = Math.floor(t / 3600), m = Math.floor(t / 60) % 60, s = t % 60;
@@ -247,30 +256,33 @@ function changed(a, b) {           // per mille of pixels whose luma moved notic
 /* --- saving: per file, keyed by name + size --- */
 function save() {
   if (!fKey) return;
-  try { localStorage.setItem(fKey, JSON.stringify({motion, red, plays, edited, sens: fSens.value})); } catch (e) {}
+  try { localStorage.setItem(fKey, JSON.stringify({motion, red, lum, plays, edited, sens: fSens.value})); } catch (e) {}
 }
 function restore() {
   let d = null;
   try { d = JSON.parse(localStorage.getItem(fKey) || "null"); } catch (e) {}
-  motion = (d && d.motion) || []; red = (d && d.red) || []; plays = (d && d.plays) || []; edited = !!(d && d.edited);
+  motion = (d && d.motion) || []; red = (d && d.red) || []; lum = (d && d.lum) || []; plays = (d && d.plays) || []; edited = !!(d && d.edited);
   if (d && d.sens) fSens.value = d.sens;
   if (motion.length) { const r = detect(); det = r.det; if (!edited) plays = r.plays; }
   else det = null;
 }
 
 /* --- scanning --- */
-const scanned = () => motion.length && motion.length * STEP >= fv.duration - STEP;
+// how far the film has been sampled; a scan saved before brightness was recorded has
+// no lum[], so it counts as unscanned and is taken again
+const done = () => Math.min(motion.length, red.length, lum.length);
+const scanned = () => done() && done() * STEP >= fv.duration - STEP;
 // resolves true once the whole film is scanned, false if stopped or declined
 function scan() {
   if (scanning) { scanning(); return Promise.resolve(false); }
   const dur = fv.duration;
   // pick up where a stopped scan left off; otherwise start over
-  let i = motion.length;
+  let i = done();
   if (i * STEP >= dur - STEP) {
     if (edited && plays.length && !confirm("Rescan and replace the plays you've edited?")) return Promise.resolve(false);
     i = 0;
   }
-  if (!i) { motion = []; red = []; plays = []; cur = -1; edited = false; det = null; renderPlays(); }
+  if (!i) { motion = []; red = []; lum = []; plays = []; cur = -1; edited = false; det = null; renderPlays(); }
   let prev = null, stopped = false;
   const t0 = performance.now(), i0 = i;
 
@@ -297,6 +309,7 @@ function scan() {
       if (prev) motion[i] = changed(prev, g);
       else motion[i] = 0;
       red[i] = redness();
+      lum[i] = Math.round(g.reduce((a, v) => a + v, 0) / g.length);
       prev = g;
       if (i % 20 === 0) {
         const rate = (i - i0 + 1) / (performance.now() - t0), left = (dur / STEP - i) / rate / 1000;
@@ -326,30 +339,69 @@ function detect() {
     for (let j = Math.max(0, i - 1); j <= Math.min(n - 1, i + 1); j++) { s += med[j]; c++; }
     return s / c;
   });
-  const sorted = [...sm].sort((a, b) => a - b);
-  const lo = sorted[Math.floor(n * 0.5)] || 0, hi = sorted[Math.floor(n * 0.97)] || 0;
-  const thr = lo + Math.max(hi - lo, 4) * (0.6 - fSens.value * 0.55);
   // replay[i]: the red badge is up (median of 3, so one odd frame doesn't count)
   const rs = [...red].filter(v => v != null).sort((a, b) => a - b);
   const rlo = rs[Math.floor(rs.length * 0.5)] || 0;
   const rflag = Array.from({length: n}, (_, i) => red[i] != null && red[i] > rlo + 10);
   const replay = rflag.map((v, i) => (rflag[i-1] ?? v) + v + (rflag[i+1] ?? v) >= 2);
+  // Black screens (the sponsor card either side of a replay, ad breaks) are breaks
+  // too, along with the second after one, whose motion is just the cut back to the
+  // picture. Black is judged against the film's own brightness: a night game under
+  // lights is dim all through, so a fixed level would call half of it black.
+  const ls = [...lum].filter(v => v != null).sort((a, b) => a - b);
+  const lmed = ls[Math.floor(ls.length * 0.5)] || 0;
+  const black = Math.min(40, lmed * 0.5);
+  const dark = i => lum[i] != null && lum[i] < black;
+  const brk = Array.from({length: n}, (_, i) => replay[i] || dark(i) || dark(i - 1));
 
-  // replay seconds never count as action, and a play never stretches across one
-  const act = i => sm[i] > thr && !replay[i];
-  let segs = [];
+  // What counts as action follows the film. A fixed camera and a camera that pans and
+  // zooms to follow the ball put wildly different amounts of movement on screen, and
+  // one film often has both; with a single level for the whole film the busy stretches
+  // set the bar and every play in the quiet ones is lost. So the baseline (lo) and the
+  // busy level (hi) are taken over BASE seconds either side. They move slowly, so they
+  // are worked out every fifth sample and held in between.
+  const sens = +fSens.value;
+  const lo = new Array(n), hi = new Array(n), thr = new Array(n);
   for (let i = 0; i < n; i++) {
-    if (!act(i)) continue;
-    const s = (replay[i - 1] ? i : i - 1) * STEP;
-    while (i < n && act(i)) i++;
-    segs.push({s, e: i * STEP});
+    if (!(i % 5)) {
+      const w = [];
+      for (let j = Math.max(0, i - BASE); j < Math.min(n, i + BASE); j++) if (!brk[j]) w.push(sm[j]);
+      w.sort((a, b) => a - b);
+      lo[i] = w[Math.floor(w.length * 0.5)] || 0;
+      hi[i] = w[Math.floor(w.length * 0.95)] || 0;
+    } else { lo[i] = lo[i-1]; hi[i] = hi[i-1]; }
+    thr[i] = lo[i] + Math.max(hi[i] - lo[i], 4) * (0.6 - sens * 0.55);
   }
-  const replayIn = (a, b) => { for (let i = Math.round(a / STEP); i < b / STEP && i < n; i++) if (replay[i]) return true; return false; };
-  const merged = [];
-  for (const g of segs) {                       // short dips inside a play aren't dead time
-    const p = merged[merged.length - 1];
-    if (p && g.s - p.e < 4 && !replayIn(p.e, g.s)) p.e = g.e; else merged.push({...g});
+
+  // A play is a plateau, not a flick of the camera. Seed where the motion clears the
+  // threshold, grow out while it stays up (replay and black seconds stop it, so a play
+  // never stretches across one), and keep it only if it holds at half its own peak for
+  // a few seconds: the camera re-framing between plays spikes and dies inside 3 or 4 s,
+  // a play keeps going. The Sensitivity slider sets how few seconds will do.
+  const span = Math.max(2, Math.round(7.5 - sens * 5));
+  const seed = i => sm[i] > thr[i] && !brk[i];
+  const grow = i => i >= 0 && i < n && !brk[i] && sm[i] > lo[i] + (thr[i] - lo[i]) * HOLD;
+  const segs = [];
+  for (let i = 0; i < n; i++) {
+    if (!seed(i)) continue;
+    let a = i; while (grow(a - 1)) a--;
+    let b = i; while (grow(b + 1)) b++;
+    const p = segs[segs.length - 1];
+    if (p && a <= p.e) p.e = Math.max(p.e, b + 1); else segs.push({s: a, e: b + 1});
+    i = b;
   }
+  // Measured on med[], not the 3 s average: the average blurs a 2 s flick of the
+  // camera out to look as wide as a short play.
+  const held = g => {                           // seconds it holds at half its own peak
+    let peak = 0, at = g.s;
+    for (let i = g.s; i < g.e; i++) if (med[i] > peak) { peak = med[i]; at = i; }
+    const half = lo[at] + (peak - lo[at]) * 0.5;
+    let a = at; while (a > g.s && med[a-1] > half) a--;
+    let b = at; while (b < g.e - 1 && med[b+1] > half) b++;
+    return b - a + 1;
+  };
+  const cores = segs.filter(g => held(g) >= span).map(g => ({s: g.s * STEP, e: g.e * STEP}));
+
   const dur = fv.duration || n * STEP;
   let replays = 0;
   for (let i = 0; i < n; i++) {                 // count the replays skipped (3 s or more)
@@ -357,31 +409,32 @@ function detect() {
     if (j - i >= 3) replays++;
     i = j;
   }
-  const cores = merged.filter(g => g.e - g.s >= 3);
   // A play starts at the break of the huddle. Walking back from the snap: the set
   // (a few still seconds), then the walk up to the line (some motion), then the
   // huddle (still again). Bounded by the previous play's end and HUDDLE_MAX; if no
   // walk-up shows (no-huddle, or the camera was off between plays), PRE before the snap.
-  const walk = lo + Math.max(thr - lo, 2) * 0.25;
   const out = [];
   cores.forEach((g, k) => {
+    const i0 = Math.round(g.s / STEP);
+    const walk = lo[i0] + Math.max(thr[i0] - lo[i0], 2) * 0.25;
     const prevEnd = k ? cores[k - 1].e + POST : 0;
     const floor = Math.max(0, prevEnd, g.s - HUDDLE_MAX);
     let s = Math.max(floor, g.s - PRE);
-    let i = Math.round(g.s / STEP) - 1, still = 0;
-    while (i * STEP >= floor && !replay[i] && sm[i] <= walk && still < 4) { i--; still++; }   // the set
-    if (i * STEP >= floor && !replay[i] && sm[i] > walk) {
+    let i = i0 - 1, still = 0;
+    while (i * STEP >= floor && !brk[i] && sm[i] <= walk && still < 4) { i--; still++; }   // the set
+    if (i * STEP >= floor && !brk[i] && sm[i] > walk) {
       let quiet = 0;
-      while (i * STEP >= floor && !replay[i] && quiet < 2) { quiet = sm[i] > walk ? 0 : quiet + 1; i--; }
+      while (i * STEP >= floor && !brk[i] && quiet < 2) { quiet = sm[i] > walk ? 0 : quiet + 1; i--; }
       s = Math.min(s, Math.max(floor, (quiet === 2 ? i + quiet : i + 1) * STEP));
     }
     let e = Math.min(dur, g.e + POST), j = Math.round(g.e / STEP);
-    while (j * STEP < e && !replay[j]) j++;      // a replay cuts the tail short
+    while (j * STEP < e && !brk[j]) j++;         // a replay or black screen cuts the tail short
     e = Math.min(e, j * STEP);
     const p = out[out.length - 1];
     if (p && s <= p.e) p.e = e; else out.push({s, e, call: ""});
   });
-  return {plays: out, replays, det: {sm, thr, max: Math.max(hi * 1.4, thr * 1.5, 10)}};
+  const all = [...sm].sort((a, b) => a - b);
+  return {plays: out, replays, det: {sm, thr, max: Math.max((all[Math.floor(n * 0.97)] || 0) * 1.4, 10)}};
 }
 function runDetect() {
   const r = detect();
@@ -504,10 +557,14 @@ function drawTl() {
       }
       c.stroke();
     }
-    if (det) {
+    if (det) {                      // the threshold follows the film, so it is a curve
       c.strokeStyle = v("--warn"); c.setLineDash([4, 4]); c.beginPath();
-      const y = h - Math.min(1, det.thr / det.max) * (h - 4);
-      c.moveTo(0, y); c.lineTo(w, y); c.stroke(); c.setLineDash([]);
+      const per = Math.max(1, det.thr.length / w);
+      for (let x = 0; x < Math.min(w, det.thr.length); x++) {
+        const y = h - Math.min(1, (det.thr[Math.floor(x * per)] || 0) / det.max) * (h - 4);
+        x ? c.lineTo(X(x * per * STEP), y) : c.moveTo(0, y);
+      }
+      c.stroke(); c.setLineDash([]);
     }
     c.fillStyle = v("--accent"); c.fillRect(X(fv.currentTime) - 1, 0, 2, h);
   });
@@ -657,9 +714,9 @@ fFile.addEventListener("change", () => {
 fv.addEventListener("loadedmetadata", () => {
   fScan.disabled = false; fExp.disabled = false;
   restore(); renderPlays(); drawTl();
-  const partial = motion.length && motion.length * STEP < fv.duration - STEP;
+  const partial = done() && done() * STEP < fv.duration - STEP;
   fScan.textContent = partial ? "Continue scan" : "Find plays";
-  say(partial ? `Checked the first ${fmt(motion.length * STEP)} of ${fmt(fv.duration)} earlier. Cut into clips picks up where it stopped.`
+  say(partial ? `Checked the first ${fmt(done() * STEP)} of ${fmt(fv.duration)} earlier. Cut into clips picks up where it stopped.`
       : plays.length ? `${plays.length} plays found earlier for this video. Cut into clips saves them.`
       : `${fmt(fv.duration)} of film. Now click Cut into clips. Finding the plays takes a few minutes per hour of film.`);
 });

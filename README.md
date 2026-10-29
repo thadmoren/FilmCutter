@@ -26,12 +26,20 @@ Under step 2, **Number the clips, starting at** sets the first number (`play-001
 named by where it starts in the game instead (`play-at-0h12m05s`). It remembers your choice.
 
 How it finds plays: it steps through the film once per second and measures how much of
-the picture changed; the stretches with movement are plays. Each play runs from the
-break of the huddle (it looks back from the snap for the walk up to the line, at most
-20 s) to 5 s after the whistle; with no huddle to see (no-huddle, or the camera was
-off), it starts 2 s before the snap. **Replays** (the red "replay" badge in the
-top-right corner, as on NFHS Network film) are skipped, and a play's clip stops where a
-replay begins.
+the picture changed; the stretches where that movement **starts and keeps going** are
+plays. The "keeps going" part matters: between plays the camera swings round to the new
+line of scrimmage, which moves the picture just as much as a play does but is over in
+three or four seconds, so a burst that dies away that fast is thrown out. It also judges
+each stretch against the minute or so around it rather than against the whole game,
+because a camera that sits still and a camera that follows the ball look nothing alike
+and most films have both.
+
+Each play runs from the break of the huddle (it looks back from the snap for the walk up
+to the line, at most 20 s) to 5 s after the whistle; with no huddle to see (no-huddle,
+or the camera was off), it starts 2 s before the snap. **Replays** (the red "replay"
+badge in the top-right corner, as on NFHS Network film) and **black screens** (the
+sponsor card either side of a replay, or an ad break) are skipped, and a play's clip
+stops where one begins.
 
 About the clips: picking a folder needs Chrome or Edge on a computer; other browsers
 download the clips one by one. Clips are cut without re-encoding, so it takes seconds
