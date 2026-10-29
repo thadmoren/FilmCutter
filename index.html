@@ -95,7 +95,7 @@
 <div class="wrap film">
   <h1>🎬 Film Cutter</h1>
   <div class="sub">Open a full game — get every play, with the dead time cut out.
-    <span class="ver">v2026.10.29</span></div>
+    <span class="ver">v2026.10.29.2</span></div>
   <div class="family">Same family as <a href="../FormationDrawer/">🏈 Formation Drawer</a></div>
 
     <p class="film-note">Open a game file from this device (it never gets uploaded). <b>Find plays</b> scans
@@ -161,6 +161,7 @@ const fExp = document.getElementById("fExp");
 
 let fKey = null, fName = "", fUrl = null, fFileObj = null;
 let motion = [];                   // motion[i] = changed pixels (per mille) ending at i*STEP
+let red = [];                      // red[i] = bright-red pixels (per mille) in the top-right corner at i*STEP
 let det = null;                    // {sm, thr, max} from the last detect, for the timeline
 let plays = [];                    // [{s, e, call}] in seconds, sorted by start
 let edited = false;                // true once plays were touched by hand
@@ -169,6 +170,13 @@ let cur = -1, scanning = null, scanRun = null;   // scanRun: the running scan's 
 const scv = document.createElement("canvas");
 scv.width = SW; scv.height = SH;
 const sctx = scv.getContext("2d", {willReadFrequently: true});
+// Replays carry a red "replay" badge in the top-right corner. Each sample also counts
+// bright-red pixels in that corner; detect() flags samples well above the game's usual
+// level (so red seats or a red scoreboard that are always there don't count).
+const RW = 48, RH = 27;            // top-right corner sample size
+const rcv = document.createElement("canvas");
+rcv.width = RW; rcv.height = RH;
+const rctx = rcv.getContext("2d", {willReadFrequently: true});
 
 function fmt(t) {
   const h = Math.floor(t / 3600), m = Math.floor(t / 60) % 60, s = t % 60;
@@ -196,6 +204,15 @@ function grab() {
   for (let i = 0; i < g.length; i++) g[i] = (d[i*4] * 3 + d[i*4+1] * 6 + d[i*4+2]) / 10;
   return g;
 }
+function redness() {               // per mille of bright-red pixels in the top-right corner
+  const w = fv.videoWidth, h = fv.videoHeight;
+  rctx.drawImage(fv, w * 0.75, 0, w * 0.25, h * 0.25, 0, 0, RW, RH);
+  const d = rctx.getImageData(0, 0, RW, RH).data;
+  let n = 0;
+  for (let i = 0; i < d.length; i += 4)
+    if (d[i] > 140 && d[i] > d[i+1] * 1.8 && d[i] > d[i+2] * 1.8) n++;
+  return Math.round(n / (RW * RH) * 1000);
+}
 function changed(a, b) {           // per mille of pixels whose luma moved noticeably
   let n = 0;
   for (let i = 0; i < a.length; i++) if (Math.abs(a[i] - b[i]) > 18) n++;
@@ -205,12 +222,12 @@ function changed(a, b) {           // per mille of pixels whose luma moved notic
 /* --- saving: per file, keyed by name + size --- */
 function save() {
   if (!fKey) return;
-  try { localStorage.setItem(fKey, JSON.stringify({motion, plays, edited, sens: fSens.value})); } catch (e) {}
+  try { localStorage.setItem(fKey, JSON.stringify({motion, red, plays, edited, sens: fSens.value})); } catch (e) {}
 }
 function restore() {
   let d = null;
   try { d = JSON.parse(localStorage.getItem(fKey) || "null"); } catch (e) {}
-  motion = (d && d.motion) || []; plays = (d && d.plays) || []; edited = !!(d && d.edited);
+  motion = (d && d.motion) || []; red = (d && d.red) || []; plays = (d && d.plays) || []; edited = !!(d && d.edited);
   if (d && d.sens) fSens.value = d.sens;
   if (motion.length) { const r = detect(); det = r.det; if (!edited) plays = r.plays; }
   else det = null;
@@ -228,7 +245,7 @@ function scan() {
     if (edited && plays.length && !confirm("Rescan and replace the plays you've edited?")) return Promise.resolve(false);
     i = 0;
   }
-  if (!i) { motion = []; plays = []; cur = -1; edited = false; det = null; renderPlays(); }
+  if (!i) { motion = []; red = []; plays = []; cur = -1; edited = false; det = null; renderPlays(); }
   let prev = null, stopped = false;
   const t0 = performance.now(), i0 = i;
 
@@ -253,6 +270,7 @@ function scan() {
       const g = grab();
       if (prev) motion[i] = changed(prev, g);
       else motion[i] = 0;
+      red[i] = redness();
       prev = g;
       if (i % 20 === 0) {
         const rate = (i - i0 + 1) / (performance.now() - t0), left = (dur / STEP - i) / rate / 1000;
@@ -284,20 +302,34 @@ function detect() {
   const sorted = [...sm].sort((a, b) => a - b);
   const lo = sorted[Math.floor(n * 0.5)] || 0, hi = sorted[Math.floor(n * 0.97)] || 0;
   const thr = lo + Math.max(hi - lo, 4) * (0.6 - fSens.value * 0.55);
+  // replay[i]: the red badge is up (median of 3, so one odd frame doesn't count)
+  const rs = [...red].filter(v => v != null).sort((a, b) => a - b);
+  const rlo = rs[Math.floor(rs.length * 0.5)] || 0;
+  const rflag = Array.from({length: n}, (_, i) => red[i] != null && red[i] > rlo + 10);
+  const replay = rflag.map((v, i) => (rflag[i-1] ?? v) + v + (rflag[i+1] ?? v) >= 2);
 
+  // replay seconds never count as action, and a play never stretches across one
+  const act = i => sm[i] > thr && !replay[i];
   let segs = [];
   for (let i = 0; i < n; i++) {
-    if (sm[i] <= thr) continue;
-    const s = (i - 1) * STEP;
-    while (i < n && sm[i] > thr) i++;
+    if (!act(i)) continue;
+    const s = (replay[i - 1] ? i : i - 1) * STEP;
+    while (i < n && act(i)) i++;
     segs.push({s, e: i * STEP});
   }
+  const replayIn = (a, b) => { for (let i = Math.round(a / STEP); i < b / STEP && i < n; i++) if (replay[i]) return true; return false; };
   const merged = [];
   for (const g of segs) {                       // short dips inside a play aren't dead time
     const p = merged[merged.length - 1];
-    if (p && g.s - p.e < 4) p.e = g.e; else merged.push({...g});
+    if (p && g.s - p.e < 4 && !replayIn(p.e, g.s)) p.e = g.e; else merged.push({...g});
   }
   const dur = fv.duration || n * STEP;
+  let replays = 0;
+  for (let i = 0; i < n; i++) {                 // count the replays skipped (3 s or more)
+    let j = i; while (j < n && replay[j]) j++;
+    if (j - i >= 3) replays++;
+    i = j;
+  }
   const cores = merged.filter(g => g.e - g.s >= 3);
   // A play starts at the break of the huddle. Walking back from the snap: the set
   // (a few still seconds), then the walk up to the line (some motion), then the
@@ -310,16 +342,19 @@ function detect() {
     const floor = Math.max(0, prevEnd, g.s - HUDDLE_MAX);
     let s = Math.max(floor, g.s - PRE);
     let i = Math.round(g.s / STEP) - 1, still = 0;
-    while (i * STEP >= floor && sm[i] <= walk && still < 4) { i--; still++; }   // the set
-    if (i * STEP >= floor && sm[i] > walk) {
+    while (i * STEP >= floor && !replay[i] && sm[i] <= walk && still < 4) { i--; still++; }   // the set
+    if (i * STEP >= floor && !replay[i] && sm[i] > walk) {
       let quiet = 0;
-      while (i * STEP >= floor && quiet < 2) { quiet = sm[i] > walk ? 0 : quiet + 1; i--; }
-      s = Math.min(s, Math.max(floor, (i + quiet) * STEP));
+      while (i * STEP >= floor && !replay[i] && quiet < 2) { quiet = sm[i] > walk ? 0 : quiet + 1; i--; }
+      s = Math.min(s, Math.max(floor, (quiet === 2 ? i + quiet : i + 1) * STEP));
     }
-    const e = Math.min(dur, g.e + POST), p = out[out.length - 1];
+    let e = Math.min(dur, g.e + POST), j = Math.round(g.e / STEP);
+    while (j * STEP < e && !replay[j]) j++;      // a replay cuts the tail short
+    e = Math.min(e, j * STEP);
+    const p = out[out.length - 1];
     if (p && s <= p.e) p.e = e; else out.push({s, e, call: ""});
   });
-  return {plays: out, det: {sm, thr, max: Math.max(hi * 1.4, thr * 1.5, 10)}};
+  return {plays: out, replays, det: {sm, thr, max: Math.max(hi * 1.4, thr * 1.5, 10)}};
 }
 function runDetect() {
   const r = detect();
@@ -327,7 +362,8 @@ function runDetect() {
   renderPlays(); save(); drawTl();
   const total = plays.reduce((a, p) => a + p.e - p.s, 0);
   say(plays.length
-    ? `${plays.length} plays · ${fmt(total)} of action out of ${fmt(fv.duration)}. Sensitivity higher = more plays.`
+    ? `${plays.length} plays · ${fmt(total)} of action out of ${fmt(fv.duration)}` +
+      (r.replays ? ` · ${r.replays} replay${r.replays > 1 ? "s" : ""} skipped` : "") + ". Sensitivity higher = more plays."
     : "No plays found — try raising Sensitivity.");
 }
 

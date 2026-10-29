@@ -19,6 +19,8 @@ the stretches with movement as plays. Each play runs from the break of the huddl
 looks back from the snap for the walk up to the line, at most 20 s) to 5 s after the
 whistle; with no huddle to see (no-huddle, or the camera was off), it starts 2 s before
 the snap.
+**Replays** (the red "replay" badge in the top-right corner, as on NFHS Network film)
+are skipped, and a play's clip stops where a replay begins.
 Expect a few minutes per hour of film. **Stop** keeps what's scanned and **Continue
 scan** picks it up later, even after closing the tab.
 

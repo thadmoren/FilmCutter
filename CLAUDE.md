@@ -32,6 +32,11 @@ starts at the break of the huddle: from the snap, skip ≤ 4 s of still (the set
 walk back through motion above `walk` (a quarter of the way from the median to the
 threshold) until 2 s of still (the huddle), bounded by the previous play's end and
 `HUDDLE_MAX` 20 s; no walk-up → `PRE` 2 s before the snap. Ends `POST` 5 s after.
+**Replays**: each sample also stores `red[i]`, the per-mille of bright-red pixels in the
+top-right corner (right 25 %, top 25 %), for the NFHS "replay" badge. A sample is replay
+when it is > 10 above the game's median (so always-red seats or scoreboards don't count),
+median-of-3. Replay seconds are never action, a play never merges across one, the
+huddle walk-back stops at one, and the 5 s tail is cut where one starts.
 Plays are `{s, e, call}` in seconds; everything persists in localStorage under
 `filmCutter:<name>:<size>`, and a stopped scan resumes from
 `motion.length`. **Don't switch the scan to fast-forward playback**: at 8–16× browsers
