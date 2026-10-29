@@ -72,9 +72,17 @@
   .film video { width:100%; border-radius:12px; background:#000; display:block; }
   .film canvas { box-shadow:none; margin-top:0; }
   [hidden] { display:none !important; }   /* base canvas/label display rules would beat it */
+  .steps { list-style:none; display:flex; flex-direction:column; gap:12px; margin:14px 0 10px; }
+  .steps li { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .steps .n { width:2em; height:2em; flex:none; border-radius:50%; display:grid; place-items:center;
+    background:var(--chip-bg); color:var(--chip-text); font-weight:700; }
+  .steps .filebtn, .steps button { font-size:1.1rem; padding:12px 22px; }
+  .steps .hint { color:var(--muted); font-size:.85rem; flex:1 1 12em; overflow-wrap:anywhere; }
+  #fProg { width:100%; height:12px; accent-color:var(--accent); margin-top:4px; }
+  #fMore { margin-top:18px; border-top:1px solid var(--border); padding-top:12px; }
+  #fMore summary { cursor:pointer; font-weight:700; color:var(--muted); margin-bottom:8px; }
   #fTl { width:100%; height:64px; border-radius:8px; margin-top:10px; cursor:pointer; }
   .film-ctl { margin-top:8px; align-items:center; }
-  .film button.go { font-size:.85rem; padding:7px 14px; }
   #fMsg { min-height:1.3em; margin:8px 2px 0; color:var(--muted); }
   #fList { max-height:340px; overflow-y:auto; margin-top:8px; border:1px solid var(--border); border-radius:10px; }
   #fList:empty { display:none; }
@@ -95,38 +103,46 @@
 <div class="wrap film">
   <h1>🎬 Film Cutter</h1>
   <div class="sub">Open a full game — get every play, with the dead time cut out.
-    <span class="ver">v2026.10.29.3</span></div>
+    <span class="ver">v2026.10.29.4</span></div>
   <div class="family">Same family as <a href="../FormationDrawer/">🏈 Formation Drawer</a></div>
 
-    <p class="film-note">Open a game file from this device (it never gets uploaded). <b>Find plays</b> scans
-      through it watching for the snap, then playback skips the dead time between plays. Type a formation call on any play to
-      see its diagram (from Formation Drawer) beside the video. <b>Export clips</b> does it all in one go: pick a
-      folder and every play, from the break of the huddle to 5 s after the whistle, is saved there as its own
-      video file. Works best on a computer.</p>
-    <div class="bar" style="align-items:center">
-      <label class="filebtn">Open game file<input type="file" id="fFile" accept="video/*" hidden></label>
-      <button id="fScan" disabled>Find plays</button>
-      <label class="sens" title="Higher finds more plays">Sensitivity
-        <input type="range" id="fSens" min="0" max="1" step="0.05" value="0.5"></label>
-    </div>
+    <p class="film-note">Turns a full game into one video per play, from the break of the huddle to 5 s after
+      the whistle. Replays and dead time are left out. Your video stays on this computer; nothing is uploaded.
+      Use Chrome or Edge on a computer.</p>
+    <ol class="steps">
+      <li><span class="n">1</span><label class="filebtn">Choose game video<input type="file" id="fFile" accept="video/*" hidden></label>
+        <span class="hint" id="fFileName">No video chosen yet.</span></li>
+      <li><span class="n">2</span><button id="fExp" disabled>Cut into clips</button>
+        <span class="hint">Asks which folder to put the clips in, then does the rest.</span></li>
+    </ol>
+    <progress id="fProg" max="1" value="0" hidden></progress>
     <div id="fMsg"></div>
-    <div id="fWork" hidden>
-      <div class="film-grid" id="fGrid">
-        <video id="fv" controls playsinline preload="metadata"></video>
-        <canvas id="fDiag" hidden></canvas>
+    <details id="fMore" hidden>
+      <summary>Review plays and add formation calls (optional)</summary>
+      <p class="film-note">Watch the plays it found, fix their start and end, and type a formation call on any
+        play to see its diagram (from Formation Drawer) beside the video. Calls become part of each clip's name.</p>
+      <div class="bar" style="align-items:center">
+        <button class="sm" id="fScan" disabled>Find plays</button>
+        <label class="sens" title="Higher finds more plays">Sensitivity
+          <input type="range" id="fSens" min="0" max="1" step="0.05" value="0.5"></label>
       </div>
-      <canvas id="fTl"></canvas>
-      <div class="bar film-ctl">
-        <button class="sm" id="fPrev" title="Previous play ( , )">◀ Prev</button>
-        <button class="sm" id="fNext" title="Next play ( . )">Next ▶</button>
-        <label class="chk"><input type="checkbox" id="fSkip" checked> Skip dead time</label>
-        <button class="sm" id="fAdd">+ Play here</button>
-        <button class="go" id="fExp" title="Save every play as its own video file">Export clips</button>
-        <button class="sm" id="fCsv">Download CSV</button>
-        <button class="sm" id="fSh" title="A Mac Terminal script that re-encodes each play to .mp4 and also makes one condensed game">Mac clip script</button>
+      <div id="fWork">
+        <div class="film-grid" id="fGrid">
+          <video id="fv" controls playsinline preload="metadata"></video>
+          <canvas id="fDiag" hidden></canvas>
+        </div>
+        <canvas id="fTl"></canvas>
+        <div class="bar film-ctl">
+          <button class="sm" id="fPrev" title="Previous play ( , )">◀ Prev</button>
+          <button class="sm" id="fNext" title="Next play ( . )">Next ▶</button>
+          <label class="chk"><input type="checkbox" id="fSkip" checked> Skip dead time</label>
+          <button class="sm" id="fAdd">+ Play here</button>
+          <button class="sm" id="fCsv">Download CSV</button>
+          <button class="sm" id="fSh" title="A Mac Terminal script that re-encodes each play to .mp4 and also makes one condensed game">Mac clip script</button>
+        </div>
+        <div id="fList"></div>
       </div>
-      <div id="fList"></div>
-    </div>
+    </details>
 </div>
 
 <script>
@@ -151,7 +167,9 @@ const fFile = document.getElementById("fFile");
 const fScan = document.getElementById("fScan");
 const fSens = document.getElementById("fSens");
 const fMsg = document.getElementById("fMsg");
-const fWork = document.getElementById("fWork");
+const fMore = document.getElementById("fMore");
+const fProg = document.getElementById("fProg");
+const fFileName = document.getElementById("fFileName");
 const fGrid = document.getElementById("fGrid");
 const fDiag = document.getElementById("fDiag");
 const fTl = document.getElementById("fTl");
@@ -252,6 +270,7 @@ function scan() {
   const finish = () => {
     if (stopped) return;
     stopped = true; scanning = null;
+    fProg.hidden = true;
     fScan.textContent = i * STEP >= dur - STEP ? "Find plays" : "Continue scan";
     runDetect();
     if (fScan.textContent !== "Find plays") say(fMsg.textContent + " Scan stopped at " + fmt(i * STEP) + ".");
@@ -274,7 +293,8 @@ function scan() {
       prev = g;
       if (i % 20 === 0) {
         const rate = (i - i0 + 1) / (performance.now() - t0), left = (dur / STEP - i) / rate / 1000;
-        say(`Scanning… ${Math.floor(i * STEP / dur * 100)}%  (${fmt(i * STEP)} of ${fmt(dur)}, about ${Math.ceil(left / 60)} min left). Stop keeps what's scanned; you can continue later.`);
+        fProg.hidden = false; fProg.value = i * STEP / dur;
+        say(`Finding the plays… ${Math.floor(i * STEP / dur * 100)}% (${fmt(i * STEP)} of ${fmt(dur)}), about ${Math.ceil(left / 60)} min left. If you stop, it picks up here next time.`);
         drawTl();
         if (i % 120 === 0) save();
       }
@@ -549,7 +569,7 @@ let exporting = null;
 async function exportClips() {
   if (exporting) { exporting(); return; }
   if (!fFileObj || !fv.duration) return;
-  if (scanned() && !plays.length) return say("No plays to export — try raising Sensitivity.");
+  if (scanned() && !plays.length) return say("No plays found. Open the review section below and raise Sensitivity.");
   let dir = null;
   if (window.showDirectoryPicker) {
     try { dir = await showDirectoryPicker({id: "filmcutter", mode: "readwrite"}); }
@@ -557,18 +577,18 @@ async function exportClips() {
   } else if ((plays.length > 1 || !scanned()) &&
              !confirm("This browser saves each play as its own download. Go?")) return;
   if (!scanned()) {
-    exporting = () => scanning && scanning(); fExp.textContent = "Stop export";
+    exporting = () => scanning && scanning(); fExp.textContent = "Stop";
     const full = await (scanning ? scanRun : scan());   // join a scan already running
-    exporting = null; fExp.textContent = "Export clips";
+    exporting = null; fExp.textContent = "Cut into clips";
     if (!full) return;
-    if (!plays.length) return say("No plays found — try raising Sensitivity, then Export clips again.");
+    if (!plays.length) return say("No plays found. Open the review section below, raise Sensitivity, then Cut into clips again.");
   }
 
   const ext = (fName.match(/\.[^.]+$/) || [".mp4"])[0].toLowerCase();
   const mp4ish = /^\.(mp4|m4v|mov)$/.test(ext);
   let ff = null, stopped = false, done = 0;
   const stop = () => { stopped = true; if (ff) ff.terminate(); };
-  exporting = stop; fExp.textContent = "Stop export";
+  exporting = stop; fExp.textContent = "Stop";
   try {
     say("Loading the clip cutter (about 32 MB the first time, then it's cached)…");
     const {FFmpeg} = await import("./vendor/ffmpeg/index.js");
@@ -579,7 +599,8 @@ async function exportClips() {
     await ff.mount("WORKERFS", {files: [fFileObj]}, "/in");
     for (let i = 0; i < plays.length && !stopped; i++) {
       const p = plays[i], out = "/clip" + ext, name = clipName(p, i, ext);
-      say(`Exporting play ${i + 1} of ${plays.length}… (${name})`);
+      fProg.hidden = false; fProg.value = i / plays.length;
+      say(`Saving clip ${i + 1} of ${plays.length}… (${name})`);
       const code = await ff.exec(["-ss", p.s.toFixed(2), "-i", "/in/" + fFileObj.name,
         "-t", (p.e - p.s).toFixed(2), "-map", "0:v", "-an", "-c", "copy",
         "-avoid_negative_ts", "make_zero", ...(mp4ish ? ["-movflags", "+faststart"] : []), out]);
@@ -595,14 +616,14 @@ async function exportClips() {
       }
       done++;
     }
-    say(stopped ? `Export stopped after ${done} of ${plays.length} plays.`
-                : `Exported ${done} plays${dir && dir.name ? ` to the "${dir.name}" folder` : ""}.`);
+    say(stopped ? `Stopped after ${done} of ${plays.length} clips.`
+                : `Done: ${done} clips saved${dir && dir.name ? ` in the "${dir.name}" folder` : ""}.`);
   } catch (e) {
-    say(stopped ? `Export stopped after ${done} of ${plays.length} plays.`
-                : `Export failed${done ? ` after ${done} plays` : ""}: ${e.message || e}`);
+    say(stopped ? `Stopped after ${done} of ${plays.length} clips.`
+                : `Cutting failed${done ? ` after ${done} clips` : ""}: ${e.message || e}`);
   } finally {
     if (ff && !stopped) ff.terminate();
-    exporting = null; fExp.textContent = "Export clips";
+    exporting = null; fExp.textContent = "Cut into clips"; fProg.hidden = true;
   }
 }
 
@@ -615,17 +636,18 @@ fFile.addEventListener("change", () => {
   fUrl = URL.createObjectURL(f);
   fFileObj = f; fName = f.name; fKey = "filmCutter:" + f.name + ":" + f.size;
   cur = -1; fv.src = fUrl;
-  fWork.hidden = false; fScan.disabled = true;
+  fMore.hidden = false; fScan.disabled = true; fExp.disabled = true;
+  fFileName.textContent = f.name;
   say("Loading " + f.name + "…");
 });
 fv.addEventListener("loadedmetadata", () => {
-  fScan.disabled = false;
+  fScan.disabled = false; fExp.disabled = false;
   restore(); renderPlays(); drawTl();
   const partial = motion.length && motion.length * STEP < fv.duration - STEP;
   fScan.textContent = partial ? "Continue scan" : "Find plays";
-  say(partial ? `Scanned up to ${fmt(motion.length * STEP)} of ${fmt(fv.duration)}. Tap Continue scan to finish.`
-      : plays.length ? `${plays.length} plays saved for this file. Find plays again to rescan.`
-      : `${fmt(fv.duration)} of film. Tap Find plays — it takes a few minutes per hour of film.`);
+  say(partial ? `Checked the first ${fmt(motion.length * STEP)} of ${fmt(fv.duration)} earlier. Cut into clips picks up where it stopped.`
+      : plays.length ? `${plays.length} plays found earlier for this video. Cut into clips saves them.`
+      : `${fmt(fv.duration)} of film. Now click Cut into clips. Finding the plays takes a few minutes per hour of film.`);
 });
 fv.addEventListener("error", () => {
   if (fv.src) say("This browser can't play that file. An .mp4 (H.264) works everywhere.");
@@ -650,6 +672,7 @@ fTl.addEventListener("click", e => {
   fv.currentTime = (e.clientX - r.left) / r.width * fv.duration;
 });
 window.addEventListener("resize", drawTl);
+fMore.addEventListener("toggle", drawTl);
 
 // with Skip dead time on, playback that drifts out of a play jumps to the next one
 fv.addEventListener("timeupdate", () => {

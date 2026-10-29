@@ -43,7 +43,12 @@ Plays are `{s, e, call}` in seconds; everything persists in localStorage under
 skip and repeat frames, which jittered edges by seconds and dropped whole plays in
 testing; seeking is exact.
 
-**Export clips** (`exportClips`) runs ffmpeg.wasm from `vendor/` (see
+The page is two steps (Choose game video, **Cut into clips**) plus a closed
+`<details id="fMore">` holding the review tools: Find plays, Sensitivity, the video,
+timeline, play list with calls, CSV and Mac script. The owner wants the two-step flow
+up front; keep the extras folded away.
+
+**Cut into clips** (`exportClips`) runs ffmpeg.wasm from `vendor/` (see
 `vendor/README.md`): the game `File` is mounted with WORKERFS so ffmpeg reads slices on
 demand (verified on a 2.8 GB mp4, cutting past the 2 GB mark), and each play is a
 stream copy (`-ss` before `-i`, `-c copy`, `-avoid_negative_ts make_zero`), so a clip
