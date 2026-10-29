@@ -15,7 +15,10 @@ Open a full game film and get every play, with the dead time cut out. Same famil
 
 Pick a game file. It stays on your device; nothing is uploaded. **Find plays** steps
 through the film once per second, measures how much of the picture changed, and marks
-the stretches with movement as plays (2 s kept before the snap and after the whistle).
+the stretches with movement as plays. Each play runs from the break of the huddle (it
+looks back from the snap for the walk up to the line, at most 20 s) to 5 s after the
+whistle; with no huddle to see (no-huddle, or the camera was off), it starts 2 s before
+the snap.
 Expect a few minutes per hour of film. **Stop** keeps what's scanned and **Continue
 scan** picks it up later, even after closing the tab.
 
@@ -23,12 +26,13 @@ scan** picks it up later, even after closing the tab.
 - **Sensitivity**: higher finds more plays. It re-detects instantly, no rescan.
 - Each play row: ▶ play it · ⇤ / ⇥ set its start / end to the video's current time
   (keys `[` `]`) · ✕ delete. `,` and `.` step between plays. **+ Play here** adds one.
-  Plays over 30 s are flagged "long — check" (halftime, injuries, band).
+  Plays over 45 s are flagged "long — check" (halftime, injuries, band).
 - Type a formation call on a play (e.g. `24B I`) and its diagram, drawn by Formation
   Drawer, shows beside the video while that play runs.
-- **Export clips**: saves every play as its own video file, named with its number and
-  call (e.g. `play-012-24B-I.mp4`), right from the browser. Chrome/Edge ask for a folder
-  and write the clips into it; other browsers download them one by one. Clips are cut
+- **Export clips**: one tap does the whole game. Pick a folder, and it scans the film
+  (if it isn't scanned yet) and saves every play into that folder as its own video file,
+  named with its number and call (e.g. `play-012-24B-I.mp4`). Picking a folder needs
+  Chrome or Edge on a computer; other browsers download the clips one by one. Clips are cut
   without re-encoding, so it takes seconds and keeps full quality; a clip may start up
   to a second or two early (it begins on the nearest keyframe). The cutter is about
   32 MB and downloads the first time you export. Tested on a 2.8 GB file.

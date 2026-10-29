@@ -27,9 +27,13 @@ plain text with no validation. If Formation Drawer renames `parseCall`, `update`
 **Find plays** *seeks* every `STEP` (1 s), grabs a 96×54 grayscale frame, and stores
 the per-mille of pixels whose luma moved >18 in `motion[]`. `detect()` = median-of-3
 (kills camera-cut spikes) → 3-sample average → threshold between the median and 97th
-percentile set by the Sensitivity slider → merge gaps < 4 s, drop < 3 s, pad
-`PRE`/`POST` 2 s. Plays are `{s, e, call}` in seconds; everything persists in
-localStorage under `filmCutter:<name>:<size>`, and a stopped scan resumes from
+percentile set by the Sensitivity slider → merge gaps < 4 s, drop < 3 s. Each play then
+starts at the break of the huddle: from the snap, skip ≤ 4 s of still (the set), then
+walk back through motion above `walk` (a quarter of the way from the median to the
+threshold) until 2 s of still (the huddle), bounded by the previous play's end and
+`HUDDLE_MAX` 20 s; no walk-up → `PRE` 2 s before the snap. Ends `POST` 5 s after.
+Plays are `{s, e, call}` in seconds; everything persists in localStorage under
+`filmCutter:<name>:<size>`, and a stopped scan resumes from
 `motion.length`. **Don't switch the scan to fast-forward playback**: at 8–16× browsers
 skip and repeat frames, which jittered edges by seconds and dropped whole plays in
 testing; seeking is exact.
@@ -39,7 +43,9 @@ testing; seeking is exact.
 demand (verified on a 2.8 GB mp4, cutting past the 2 GB mark), and each play is a
 stream copy (`-ss` before `-i`, `-c copy`, `-avoid_negative_ts make_zero`), so a clip
 starts on the keyframe at or before its start. Clips keep the source container. Output
-goes to a `showDirectoryPicker` folder where it exists, else one download per clip.
+goes to a `showDirectoryPicker` folder where it exists, else one download per clip. On an
+unscanned film it asks for the folder first (needs the tap), then awaits `scan()` (which
+resolves true when the film is fully scanned), then exports: one tap per game.
 It is vendored, not CDN-loaded, because `FFmpeg` starts a module worker from its own
 URL and browsers refuse a cross-origin worker. Needs http(s), not `file://`. To test
 the folder path headlessly, stub `showDirectoryPicker` with `navigator.storage.getDirectory()`.

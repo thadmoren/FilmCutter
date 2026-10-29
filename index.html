@@ -95,13 +95,14 @@
 <div class="wrap film">
   <h1>🎬 Film Cutter</h1>
   <div class="sub">Open a full game — get every play, with the dead time cut out.
-    <span class="ver">v2026.10.28</span></div>
+    <span class="ver">v2026.10.29</span></div>
   <div class="family">Same family as <a href="../FormationDrawer/">🏈 Formation Drawer</a></div>
 
     <p class="film-note">Open a game file from this device (it never gets uploaded). <b>Find plays</b> scans
       through it watching for the snap, then playback skips the dead time between plays. Type a formation call on any play to
-      see its diagram (from Formation Drawer) beside the video. <b>Export clips</b> saves every play as its
-      own video file. Works best on a computer.</p>
+      see its diagram (from Formation Drawer) beside the video. <b>Export clips</b> does it all in one go: pick a
+      folder and every play, from the break of the huddle to 5 s after the whistle, is saved there as its own
+      video file. Works best on a computer.</p>
     <div class="bar" style="align-items:center">
       <label class="filebtn">Open game file<input type="file" id="fFile" accept="video/*" hidden></label>
       <button id="fScan" disabled>Find plays</button>
@@ -141,7 +142,8 @@
 // where smoothed motion clears a threshold set by the Sensitivity slider, so a
 // re-detect after moving the slider needs no rescan.
 const STEP = 1;                    // seconds of game time between motion samples
-const PRE = 2, POST = 2;           // seconds kept before the snap and after the whistle
+const PRE = 2, POST = 5;           // seconds kept before the snap (no huddle found) and after the whistle
+const HUDDLE_MAX = 20;             // furthest back from the snap a play can start (break of huddle)
 const SW = 96, SH = 54;            // sample frame size
 
 const fv = document.getElementById("fv");
@@ -162,7 +164,7 @@ let motion = [];                   // motion[i] = changed pixels (per mille) end
 let det = null;                    // {sm, thr, max} from the last detect, for the timeline
 let plays = [];                    // [{s, e, call}] in seconds, sorted by start
 let edited = false;                // true once plays were touched by hand
-let cur = -1, scanning = null;
+let cur = -1, scanning = null, scanRun = null;   // scanRun: the running scan's promise
 
 const scv = document.createElement("canvas");
 scv.width = SW; scv.height = SH;
@@ -210,17 +212,20 @@ function restore() {
   try { d = JSON.parse(localStorage.getItem(fKey) || "null"); } catch (e) {}
   motion = (d && d.motion) || []; plays = (d && d.plays) || []; edited = !!(d && d.edited);
   if (d && d.sens) fSens.value = d.sens;
-  det = motion.length ? detect().det : null;
+  if (motion.length) { const r = detect(); det = r.det; if (!edited) plays = r.plays; }
+  else det = null;
 }
 
 /* --- scanning --- */
+const scanned = () => motion.length && motion.length * STEP >= fv.duration - STEP;
+// resolves true once the whole film is scanned, false if stopped or declined
 function scan() {
-  if (scanning) { scanning(); return; }
+  if (scanning) { scanning(); return Promise.resolve(false); }
   const dur = fv.duration;
   // pick up where a stopped scan left off; otherwise start over
   let i = motion.length;
   if (i * STEP >= dur - STEP) {
-    if (edited && plays.length && !confirm("Rescan and replace the plays you've edited?")) return;
+    if (edited && plays.length && !confirm("Rescan and replace the plays you've edited?")) return Promise.resolve(false);
     i = 0;
   }
   if (!i) { motion = []; plays = []; cur = -1; edited = false; det = null; renderPlays(); }
@@ -239,7 +244,7 @@ function scan() {
     fv.addEventListener("seeked", res, {once: true});
     fv.currentTime = t;
   });
-  (async () => {
+  const run = (async () => {
     fv.pause();
     if (i) { await seek((i - 1) * STEP); prev = grab(); }
     for (; !stopped && i * STEP < dur - STEP / 2; i++) {
@@ -257,9 +262,11 @@ function scan() {
       }
     }
     finish();
+    return i * STEP >= dur - STEP;
   })();
-  scanning = finish;
+  scanning = finish; scanRun = run;
   fScan.textContent = "Stop";
+  return run;
 }
 
 /* --- detection --- */
@@ -291,13 +298,27 @@ function detect() {
     if (p && g.s - p.e < 4) p.e = g.e; else merged.push({...g});
   }
   const dur = fv.duration || n * STEP;
+  const cores = merged.filter(g => g.e - g.s >= 3);
+  // A play starts at the break of the huddle. Walking back from the snap: the set
+  // (a few still seconds), then the walk up to the line (some motion), then the
+  // huddle (still again). Bounded by the previous play's end and HUDDLE_MAX; if no
+  // walk-up shows (no-huddle, or the camera was off between plays), PRE before the snap.
+  const walk = lo + Math.max(thr - lo, 2) * 0.25;
   const out = [];
-  for (const g of merged) {
-    if (g.e - g.s < 3) continue;
-    const s = Math.max(0, g.s - PRE), e = Math.min(dur, g.e + POST);
-    const p = out[out.length - 1];
+  cores.forEach((g, k) => {
+    const prevEnd = k ? cores[k - 1].e + POST : 0;
+    const floor = Math.max(0, prevEnd, g.s - HUDDLE_MAX);
+    let s = Math.max(floor, g.s - PRE);
+    let i = Math.round(g.s / STEP) - 1, still = 0;
+    while (i * STEP >= floor && sm[i] <= walk && still < 4) { i--; still++; }   // the set
+    if (i * STEP >= floor && sm[i] > walk) {
+      let quiet = 0;
+      while (i * STEP >= floor && quiet < 2) { quiet = sm[i] > walk ? 0 : quiet + 1; i--; }
+      s = Math.min(s, Math.max(floor, (i + quiet) * STEP));
+    }
+    const e = Math.min(dur, g.e + POST), p = out[out.length - 1];
     if (p && s <= p.e) p.e = e; else out.push({s, e, call: ""});
-  }
+  });
   return {plays: out, det: {sm, thr, max: Math.max(hi * 1.4, thr * 1.5, 10)}};
 }
 function runDetect() {
@@ -315,7 +336,7 @@ function renderPlays() {
   fList.innerHTML = "";
   plays.forEach((p, i) => {
     const row = document.createElement("div");
-    row.className = "play" + (i === cur ? " cur" : "") + (p.e - p.s > 30 ? " long" : "");
+    row.className = "play" + (i === cur ? " cur" : "") + (p.e - p.s > 45 ? " long" : "");
     const pn = document.createElement("span"); pn.className = "pn"; pn.textContent = i + 1;
     const pt = document.createElement("span"); pt.className = "pt";
     pt.textContent = `${fmt(p.s)} · ${Math.round(p.e - p.s)}s`;
@@ -482,20 +503,30 @@ function exportScript() {
 
 // Cuts every play out of the game file in the browser with ffmpeg.wasm (vendor/).
 // Stream copy, no re-encode: fast and lossless, and a clip starts on the keyframe at
-// or just before its start, which the 2 s pad absorbs. The game file is mounted with
-// WORKERFS, so ffmpeg reads slices of it on demand instead of loading GBs into memory.
+// or just before its start, which lands in the walk-up, well before the snap. The game
+// file is mounted with WORKERFS, so ffmpeg reads slices of it on demand instead of
+// loading GBs into memory.
 // Clips go into a folder the user picks where the browser allows it (Chrome, Edge),
-// otherwise each one downloads.
+// otherwise each one downloads. If the film isn't scanned yet, the folder is asked
+// for first (it needs the tap), then the scan runs, then the export: one tap per game.
 let exporting = null;
 async function exportClips() {
   if (exporting) { exporting(); return; }
-  if (!plays.length || !fFileObj) return;
+  if (!fFileObj || !fv.duration) return;
+  if (scanned() && !plays.length) return say("No plays to export — try raising Sensitivity.");
   let dir = null;
   if (window.showDirectoryPicker) {
     try { dir = await showDirectoryPicker({id: "filmcutter", mode: "readwrite"}); }
     catch (e) { if (e.name === "AbortError") return; }
-  } else if (plays.length > 1 &&
-             !confirm(`This browser saves each play as its own download (${plays.length} files). Go?`)) return;
+  } else if ((plays.length > 1 || !scanned()) &&
+             !confirm("This browser saves each play as its own download. Go?")) return;
+  if (!scanned()) {
+    exporting = () => scanning && scanning(); fExp.textContent = "Stop export";
+    const full = await (scanning ? scanRun : scan());   // join a scan already running
+    exporting = null; fExp.textContent = "Export clips";
+    if (!full) return;
+    if (!plays.length) return say("No plays found — try raising Sensitivity, then Export clips again.");
+  }
 
   const ext = (fName.match(/\.[^.]+$/) || [".mp4"])[0].toLowerCase();
   const mp4ish = /^\.(mp4|m4v|mov)$/.test(ext);
