@@ -96,18 +96,40 @@
   .play .pn { width:1.8em; flex:none; font-weight:700; text-align:right; }
   .play .pt { flex:1; min-width:0; font-variant-numeric:tabular-nums; color:var(--muted); cursor:pointer; }
   .play.long .pt::after { content:" · long — check"; color:var(--warn); }
+  .play.off .pn, .play.off .pt { text-decoration:line-through; opacity:.45; }
   .play input { width:7.5em; min-width:4.5em; flex:0 1 7.5em; font-size:.9rem; font-weight:700; text-transform:uppercase; padding:4px 8px;
     border-radius:8px; border:1px solid var(--border); background:var(--panel); color:var(--text); }
   .play input.bad { border-color:var(--err); }
   .play button { font-size:.8rem; padding:4px 7px; flex:none; border-radius:8px; background:transparent;
     color:var(--chip-text); border:1px solid var(--border); }
+  /* picking the plays by eye: one thumbnail each, click to drop */
+  #fPickWrap { margin-top:14px; }
+  .pickbar { display:flex; gap:10px; align-items:baseline; flex-wrap:wrap; margin-bottom:8px; }
+  .pickbar .hint { flex:1; min-width:12em; }
+  .pick { display:grid; grid-template-columns:repeat(auto-fill, minmax(132px, 1fr)); gap:8px;
+    max-height:62vh; overflow:auto; padding:4px; border:1px solid var(--border); border-radius:10px;
+    background:var(--chip-bg); }
+  .pick figure { margin:0; position:relative; cursor:pointer; border-radius:8px; overflow:hidden;
+    border:2px solid transparent; background:var(--panel); line-height:0; }
+  .pick figure:focus-visible { outline:2px solid var(--border-focus); outline-offset:2px; }
+  .pick img, .pick .ph { display:block; width:100%; aspect-ratio:16/9; object-fit:cover; background:var(--chip-bg); }
+  .pick figcaption { font-size:.72rem; line-height:1.5; padding:2px 3px 2px 5px; color:var(--muted);
+    font-variant-numeric:tabular-nums; display:flex; justify-content:space-between; align-items:center; gap:4px; }
+  .pick .go { font:inherit; color:var(--chip-text); background:transparent; border:0; padding:0 3px;
+    border-radius:5px; cursor:pointer; }
+  .pick .go:hover { background:var(--chip-bg); color:var(--text); }
+  .pick figure.off { border-color:var(--err); }
+  .pick figure.off img, .pick figure.off .ph { opacity:.25; }
+  .pick figure.off figcaption { color:var(--err); }
+  .pick figure.off::after { content:"dropped"; position:absolute; inset:0; display:grid; place-items:center;
+    font-size:.8rem; font-weight:700; color:var(--err); pointer-events:none; }
 </style>
 </head>
 <body>
 <div class="wrap film">
   <h1>🎬 Film Cutter</h1>
   <div class="sub">Open a full game — get every play, with the dead time cut out.
-    <span class="ver">v2026.10.29.11</span></div>
+    <span class="ver">v2026.10.29.12</span></div>
   <div class="family">Same family as <a href="../FormationDrawer/">🏈 Formation Drawer</a></div>
 
     <p class="film-note">Turns a full game into one video per play, from 5 s before the snap to 5 s after
@@ -124,6 +146,14 @@
     </ol>
     <progress id="fProg" max="1" value="0" hidden></progress>
     <div id="fMsg"></div>
+    <section id="fPickWrap" hidden>
+      <div class="pickbar">
+        <strong id="fPickCount"></strong>
+        <span class="hint">One picture per play, taken as the ball goes. Click any you don't want.</span>
+        <button class="sm" id="fPickAll" type="button">Keep all</button>
+      </div>
+      <div id="fPick" class="pick"></div>
+    </section>
     <details id="fMore" hidden>
       <summary>Review plays and add formation calls (optional)</summary>
       <p class="film-note">Watch the plays it found, fix their start and end, and type a formation call on any
@@ -285,7 +315,8 @@ function scan() {
     if (edited && plays.length && !confirm("Rescan and replace the plays you've edited?")) return Promise.resolve(false);
     i = 0;
   }
-  if (!i) { motion = []; red = []; lum = []; plays = []; cur = -1; edited = false; det = null; renderPlays(); }
+  thumbRun++;                                 // a scan takes the video over
+  if (!i) { motion = []; red = []; lum = []; plays = []; cur = -1; edited = false; det = null; renderPlays(); renderPick(); }
   let prev = null, stopped = false;
   const t0 = performance.now(), i0 = i;
 
@@ -466,11 +497,13 @@ function detect() {
 function runDetect() {
   const r = detect();
   plays = r.plays; det = r.det; edited = false; cur = -1;
-  renderPlays(); save(); drawTl();
+  renderPlays(); renderPick(); save(); drawTl();
+  setTimeout(fillThumbs, 60);           // let the scan settle before seeking again
   const total = plays.reduce((a, p) => a + p.e - p.s, 0);
   say(plays.length
     ? `${plays.length} plays · ${fmt(total)} of action out of ${fmt(fv.duration)}` +
-      (r.replays ? ` · ${r.replays} replay${r.replays > 1 ? "s" : ""} skipped` : "") + ". Sensitivity higher = more plays."
+      (r.replays ? ` · ${r.replays} replay${r.replays > 1 ? "s" : ""} skipped` : "") +
+      ". Click any picture that isn't a play to drop it. Sensitivity higher = more plays."
     : "No plays found — try raising Sensitivity.");
 }
 
@@ -479,7 +512,7 @@ function renderPlays() {
   fList.innerHTML = "";
   plays.forEach((p, i) => {
     const row = document.createElement("div");
-    row.className = "play" + (i === cur ? " cur" : "") + (p.e - p.s > 45 ? " long" : "");
+    row.className = "play" + (i === cur ? " cur" : "") + (p.off ? " off" : "") + (p.e - p.s > 45 ? " long" : "");
     const pn = document.createElement("span"); pn.className = "pn"; pn.textContent = i + 1;
     const pt = document.createElement("span"); pt.className = "pt";
     pt.textContent = `${fmt(p.s)} · ${Math.round(p.e - p.s)}s`;
@@ -506,11 +539,122 @@ function renderPlays() {
       btn("⇥", "End here — set to the video's current time ( ] )", () => setEdge(i, "e")),
       btn("✕", "Delete play", () => {
         plays.splice(i, 1); if (cur >= plays.length) cur = plays.length - 1;
-        edited = true; renderPlays(); save(); drawTl();
+        edited = true; renderPlays(); renderPick(); save(); drawTl();
       }));
     fList.appendChild(row);
   });
 }
+/* --- picking the plays by eye ---------------------------------------------
+   On a whole game the finder hands back far more clips than there are plays.
+   Dead time, the camera wandering down the sideline, warm-ups and the halftime
+   crowd all stir the picture as much as a snap does, and nothing in whole-frame
+   movement tells them apart — motion left after cancelling the camera's own
+   movement, how widely the change is spread, whether the picture settled first,
+   and whereabouts in the frame it moved were all measured against plays timed
+   by hand, and every one of them overlaps. So the last word is the owner's:
+   one thumbnail per play, taken where the ball goes, click the ones that aren't
+   football. Dropped plays stay in the list (nothing is lost) but are skipped
+   when the clips are cut. */
+const fPickWrap = document.getElementById("fPickWrap");
+const fPick = document.getElementById("fPick");
+const fPickCount = document.getElementById("fPickCount");
+const fPickAll = document.getElementById("fPickAll");
+const TW = 160, TH = 90;                 // thumbnail size
+const tcv = document.createElement("canvas");
+tcv.width = TW; tcv.height = TH;
+const tctx = tcv.getContext("2d");
+tctx.imageSmoothingQuality = "high";
+const thumbs = new Map();                // second -> data URL, kept for the session
+const tiles = new Map();                 // second -> the figures showing it
+let thumbRun = 0;                        // bumped to call off a fill already running
+
+const kept = () => plays.filter(p => !p.off);
+const snapAt = p => Math.max(0, Math.round(p.s + PRE));   // the ball goes about here
+
+function countPick() {
+  const k = kept().length;
+  fPickCount.textContent = plays.length === k
+    ? `${k} play${k === 1 ? "" : "s"}` : `${k} of ${plays.length} plays kept`;
+  if (!exporting) fExp.textContent = k && k < plays.length ? `Cut ${k} into clips` : "Cut into clips";
+}
+function renderPick() {
+  tiles.clear(); fPick.innerHTML = "";
+  fPickWrap.hidden = !plays.length;
+  if (!plays.length) return;
+  plays.forEach((p, i) => {
+    const fig = document.createElement("figure");
+    fig.tabIndex = 0;
+    fig.title = "Click to drop this one";
+    if (p.off) fig.classList.add("off");
+    const t = snapAt(p), src = thumbs.get(t);
+    const pic = document.createElement(src ? "img" : "div");
+    if (src) { pic.src = src; pic.alt = ""; } else pic.className = "ph";
+    fig.appendChild(pic);
+    const cap = document.createElement("figcaption");
+    const a = document.createElement("span"); a.textContent = i + 1;
+    const b = document.createElement("button");   // check a doubtful one without dropping it
+    b.type = "button"; b.className = "go";
+    b.textContent = fmt(p.s).replace(/\.\d$/, "") + " ▶";
+    b.title = "Watch this one";
+    b.addEventListener("click", e => {
+      e.stopPropagation();
+      fMore.open = true; goTo(i, true);
+      fMore.scrollIntoView({block: "nearest"});
+    });
+    cap.append(a, b); fig.appendChild(cap);
+    const toggle = () => {
+      p.off = !p.off; edited = true;
+      fig.classList.toggle("off", !!p.off);
+      const row = fList.children[i];                 // keep the list in step without
+      if (row) row.classList.toggle("off", !!p.off); // rebuilding all of it
+      save(); countPick(); drawTl();
+    };
+    fig.addEventListener("click", toggle);
+    fig.addEventListener("keydown", e => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
+    });
+    if (!tiles.has(t)) tiles.set(t, []);
+    tiles.get(t).push(fig);
+    fPick.appendChild(fig);
+  });
+  countPick();
+}
+// Grab the missing thumbnails by seeking, newest request wins. Only the seconds
+// actually needed, and they are kept, so moving the Sensitivity slider only
+// fetches the plays that are new.
+async function fillThumbs() {
+  if (scanning || !fv.duration || !plays.length) return;
+  const run = ++thumbRun;
+  const want = [...new Set(plays.map(snapAt))].filter(t => !thumbs.has(t) && t < fv.duration);
+  if (!want.length) return;
+  const back = fv.currentTime, note = fMsg.textContent;
+  fv.pause();
+  const seek = t => new Promise(res => { fv.addEventListener("seeked", res, {once: true}); fv.currentTime = t; });
+  for (let i = 0; i < want.length; i++) {
+    if (run !== thumbRun) return;
+    await seek(want[i]);
+    if (run !== thumbRun) return;
+    try {
+      tctx.drawImage(fv, 0, 0, TW, TH);
+      thumbs.set(want[i], tcv.toDataURL("image/jpeg", 0.5));
+    } catch (e) { break; }
+    (tiles.get(want[i]) || []).forEach(fig => {
+      const ph = fig.querySelector(".ph");
+      if (!ph) return;
+      const im = new Image(); im.src = thumbs.get(want[i]); im.alt = "";
+      fig.replaceChild(im, ph);
+    });
+    if (i % 10 === 0) say(`Getting the pictures… ${i + 1} of ${want.length}`);
+  }
+  if (run !== thumbRun) return;
+  say(note);
+  fv.currentTime = back;
+}
+fPickAll.addEventListener("click", () => {        // undo the lot and start again
+  plays.forEach(p => delete p.off);
+  edited = true; save(); renderPlays(); renderPick(); drawTl();
+});
+
 function setCur(i) {
   cur = i;
   [...fList.children].forEach((r, j) => r.classList.toggle("cur", j === i));
@@ -531,13 +675,13 @@ function setEdge(i, edge) {
   if (edge === "s") { if (t >= p.e) return say("Start has to be before the end."); p.s = t; }
   else { if (t <= p.s) return say("End has to be after the start."); p.e = t; }
   plays.sort((a, b) => a.s - b.s); cur = plays.indexOf(p);
-  edited = true; renderPlays(); save(); drawTl();
+  edited = true; renderPlays(); renderPick(); save(); drawTl();
 }
 function addPlay() {
   const t = fv.currentTime;
   const p = {s: t, e: Math.min(fv.duration, t + 8), call: ""};
   plays.push(p); plays.sort((a, b) => a.s - b.s);
-  edited = true; renderPlays(); setCur(plays.indexOf(p)); save();
+  edited = true; renderPlays(); renderPick(); setCur(plays.indexOf(p)); save();
 }
 
 // the current play's call, drawn by Formation Drawer and copied beside the video
@@ -567,7 +711,7 @@ function drawTl() {
     const dur = fv.duration || 1, X = t => t / dur * w;
     c.fillStyle = v("--chip-bg"); c.fillRect(0, 0, w, h);
     plays.forEach((p, i) => {
-      c.globalAlpha = i === cur ? 0.6 : 0.28;
+      c.globalAlpha = p.off ? 0.08 : i === cur ? 0.6 : 0.28;
       c.fillStyle = v("--border-focus"); c.fillRect(X(p.s), 0, Math.max(1, X(p.e) - X(p.s)), h);
     });
     c.globalAlpha = 1;
@@ -617,7 +761,7 @@ const clipName = (p, i, ext = ".mp4") => (fNum.checked
 
 function exportCsv() {
   const rows = [["play", "start", "end", "seconds", "call", "start_s", "end_s"]];
-  plays.forEach((p, i) => rows.push([i + 1, fmt(p.s), fmt(p.e), (p.e - p.s).toFixed(1),
+  kept().forEach((p, i) => rows.push([i + 1, fmt(p.s), fmt(p.e), (p.e - p.s).toFixed(1),
                                      `"${(p.call || "").replace(/"/g, '""')}"`, p.s.toFixed(2), p.e.toFixed(2)]));
   download(base() + "-plays.csv", rows.map(r => r.join(",")).join("\n") + "\n", "text/csv");
 }
@@ -628,7 +772,7 @@ function exportScript() {
   const q = s => "'" + s.replace(/'/g, "'\\''") + "'";
   const lines = [
     "#!/bin/bash",
-    `# Cuts ${fName} into ${plays.length} plays, plus a condensed game with the dead time removed.`,
+    `# Cuts ${fName} into ${kept().length} plays, plus a condensed game with the dead time removed.`,
     "# Run it in Terminal:  bash <this script> <the game file>",
     "# (type bash and a space, then drag this script and the video into the Terminal window)",
     "# Needs ffmpeg — on a Mac: brew install ffmpeg",
@@ -643,7 +787,7 @@ function exportScript() {
     '  ffmpeg -hide_banner -loglevel error -y -ss "$2" -i "$IN" -t "$3" \\',
     '    -c:v libx264 -preset veryfast -crf 20 -pix_fmt yuv420p -an -movflags +faststart "$OUT/$1" </dev/null',
     '}',
-    ...plays.map((p, i) => `clip ${q(clipName(p, i))} ${p.s.toFixed(2)} ${(p.e - p.s).toFixed(2)}`),
+    ...kept().map((p, i) => `clip ${q(clipName(p, i))} ${p.s.toFixed(2)} ${(p.e - p.s).toFixed(2)}`),
     'cd "$OUT"',
     "for f in play-*.mp4; do echo \"file '$f'\"; done > list.txt",
     'ffmpeg -hide_banner -loglevel error -y -f concat -safe 0 -i list.txt -c copy "../$(basename "${IN%.*}") condensed.mp4"',
@@ -667,19 +811,21 @@ let exporting = null;
 async function exportClips() {
   if (exporting) { exporting(); return; }
   if (!fFileObj || !fv.duration) return;
-  if (scanned() && !plays.length) return say("No plays found. Open the review section below and raise Sensitivity.");
+  if (scanned() && !kept().length) return say(plays.length
+    ? "Every play is dropped. Click Keep all, or click a picture to put one back."
+    : "No plays found. Open the review section below and raise Sensitivity.");
   let dir = null;
   if (window.showDirectoryPicker) {
     try { dir = await showDirectoryPicker({id: "filmcutter", mode: "readwrite"}); }
     catch (e) { if (e.name === "AbortError") return; }
-  } else if ((plays.length > 1 || !scanned()) &&
+  } else if ((kept().length > 1 || !scanned()) &&
              !confirm("This browser saves each play as its own download. Go?")) return;
   if (!scanned()) {
     exporting = () => scanning && scanning(); fExp.textContent = "Stop";
     const full = await (scanning ? scanRun : scan());   // join a scan already running
     exporting = null; fExp.textContent = "Cut into clips";
     if (!full) return;
-    if (!plays.length) return say("No plays found. Open the review section below, raise Sensitivity, then Cut into clips again.");
+    if (!kept().length) return say("No plays found. Open the review section below, raise Sensitivity, then Cut into clips again.");
   }
 
   const ext = (fName.match(/\.[^.]+$/) || [".mp4"])[0].toLowerCase();
@@ -695,10 +841,11 @@ async function exportClips() {
     await ff.load({coreURL: here + "ffmpeg-core.js", wasmURL: here + "ffmpeg-core.wasm"});
     await ff.createDir("/in");
     await ff.mount("WORKERFS", {files: [fFileObj]}, "/in");
-    for (let i = 0; i < plays.length && !stopped; i++) {
-      const p = plays[i], out = "/clip" + ext, name = clipName(p, i, ext);
-      fProg.hidden = false; fProg.value = i / plays.length;
-      say(`Saving clip ${i + 1} of ${plays.length}… (${name})`);
+    const list = kept();
+    for (let i = 0; i < list.length && !stopped; i++) {
+      const p = list[i], out = "/clip" + ext, name = clipName(p, i, ext);
+      fProg.hidden = false; fProg.value = i / list.length;
+      say(`Saving clip ${i + 1} of ${list.length}… (${name})`);
       const code = await ff.exec(["-ss", p.s.toFixed(2), "-i", "/in/" + fFileObj.name,
         "-t", (p.e - p.s).toFixed(2), "-map", "0:v", "-an", "-c", "copy",
         "-avoid_negative_ts", "make_zero", ...(mp4ish ? ["-movflags", "+faststart"] : []), out]);
@@ -714,14 +861,14 @@ async function exportClips() {
       }
       done++;
     }
-    say(stopped ? `Stopped after ${done} of ${plays.length} clips.`
+    say(stopped ? `Stopped after ${done} of ${list.length} clips.`
                 : `Done: ${done} clips saved${dir && dir.name ? ` in the "${dir.name}" folder` : ""}.`);
   } catch (e) {
-    say(stopped ? `Stopped after ${done} of ${plays.length} clips.`
+    say(stopped ? `Stopped after ${done} clips.`
                 : `Cutting failed${done ? ` after ${done} clips` : ""}: ${e.message || e}`);
   } finally {
     if (ff && !stopped) ff.terminate();
-    exporting = null; fExp.textContent = "Cut into clips"; fProg.hidden = true;
+    exporting = null; countPick(); fProg.hidden = true;
   }
 }
 
@@ -740,7 +887,8 @@ fFile.addEventListener("change", () => {
 });
 fv.addEventListener("loadedmetadata", () => {
   fScan.disabled = false; fExp.disabled = false;
-  restore(); renderPlays(); drawTl();
+  restore(); renderPlays(); renderPick(); drawTl();
+  setTimeout(fillThumbs, 60);
   const partial = done() && done() * STEP < fv.duration - STEP;
   fScan.textContent = partial ? "Continue scan" : "Find plays";
   say(partial ? `Checked the first ${fmt(done() * STEP)} of ${fmt(fv.duration)} earlier. Cut into clips picks up where it stopped.`

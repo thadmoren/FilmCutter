@@ -106,8 +106,39 @@ again. **Don't switch the scan to fast-forward playback**: at 8–16× browsers 
 repeat frames, which jittered edges by seconds and dropped whole plays in testing;
 seeking is exact.
 
-The page is two steps (Choose game video, **Cut into clips**) plus a closed
-`<details id="fMore">` holding the review tools: Find plays, Sensitivity, the video,
+## Picking the plays by eye
+
+**On a whole game the finder hands back roughly twice as many clips as there are
+plays, and that cannot be tuned away.** A 3 h 19 m NFHS recording gives 340 clips;
+a game has 120–140 plays. Sampling 25 of the 340 by hand: about half were football,
+the rest pre-game, the halftime crowd, sidelines and dead time. The arithmetic is the
+point — wound all the way down the finder still makes ~1.1 clips a minute and a real
+game is ~0.7 plays a minute, so no setting of the dials reaches the right number; it
+just starts dropping plays while still handing over hundreds.
+
+Five ways to tell a play from the camera wandering were tried and **measured against
+plays timed by hand, and every one of them overlaps**: motion left after cancelling the
+camera's own movement (best-fit slide, ±4 cells), how widely the change is spread across
+the frame, whether the picture settled first, whereabouts in the frame it moved, and
+reading the NFHS scoreboard. The scoreboard came closest — during play it shows a down
+and distance, at halftime that goes blank and before kickoff the box isn't there — but
+NFHS alternates **two different overlay layouts within one game** (a wide bar across the
+bottom and a compact box bottom-right), both of which stay on screen showing nothing
+during halftime, so "is the overlay there" is useless and reading it means handling both
+layouts. Don't repeat these; the evidence is in the session, not in the code.
+
+So the last word is the owner's. After the finder runs, `#fPick` shows **one thumbnail
+per play, taken `PRE` seconds in — where the ball goes** — and clicking one drops it.
+Dropped plays keep a `p.off` flag: they stay in the list and in storage (nothing is
+lost, "Keep all" puts them back) but `kept()` skips them, so they are left out of the
+clips, the CSV, the Mac script and the numbering, and the Cut button counts what is
+left. Thumbnails are fetched by seeking, cached by second in `thumbs`, and so a move of
+the Sensitivity slider only fetches the plays that are new; 340 of them take about half
+a minute. They are **not** persisted — on a reload the grid draws placeholders and
+fills them again. `thumbRun` cancels a fill when a scan takes the video over.
+
+The page is two steps (Choose game video, **Cut into clips**) plus the picker, plus a
+closed `<details id="fMore">` holding the review tools: Find plays, Sensitivity, the video,
 timeline, play list with calls, CSV and Mac script. The owner wants the two-step flow
 up front; keep the extras folded away. Under step 2, `#fNum` / `#fStart` choose clip
 names (`clipName`): `play-NNN` counting from the start number, or unnumbered

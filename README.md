@@ -19,7 +19,8 @@ Two steps, on a computer in Chrome or Edge:
 2. **Cut into clips.** Pick a folder, and it finds every play and saves each one there
    as its own video file. Finding the plays takes a few minutes per hour of film; **Stop**
    keeps what's done and the next **Cut into clips** picks up there, even after closing
-   the tab.
+   the tab. On a whole game, look through the pictures it shows you first and drop the
+   ones that aren't plays — then Cut into clips saves only the ones you kept.
 
 Under step 2, **Number the clips, starting at** sets the first number (`play-001`,
 `play-002`, … or start at 101 to carry on from last week). Untick it and each clip is
@@ -40,10 +41,15 @@ and everyone getting up takes eight to fourteen, kickoffs included. That is how 
 the snap out.
 
 Each clip starts **five seconds before the snap**, so you see the teams set and the ball
-go, and ends five seconds after the whistle. Expect roughly one clip per 20–30 seconds
-of live football. Dead time the camera sweeps across — a long stoppage, the walk down
-the field after a score — can still look like a play, so a few clips will be ones you
-delete; **Sensitivity** trades those against missed plays.
+go, and ends five seconds after the whistle.
+
+**Then you pick.** It can't always tell a play from the camera swinging round, from
+warm-ups, or from the crowd on the field at halftime — on screen they move just as much
+as a snap does. So when it has finished it shows you **one picture per play, taken as
+the ball goes**. Click any that aren't football and they drop out; the count on **Cut
+into clips** follows. Nothing is thrown away — **Keep all** puts them back, and the ▶ by
+a picture plays that bit if you're not sure. On a whole game expect to bin a fair few:
+the pre-game, halftime and after the final whistle all make clips.
 
 **Replays** (the red "replay" badge in the top-right corner, as on NFHS Network film)
 and **black screens** (the sponsor card either side of a replay, or an ad break) are
