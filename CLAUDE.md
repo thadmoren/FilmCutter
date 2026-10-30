@@ -40,31 +40,38 @@ picture while a snap the camera chases moves all of it, and both are plays; by
 prominence they score alike. The size worth noticing is local: `lo` (20th percentile)
 and `hi` (90th) over `BASE` 30 s either side, with a floor at 12 % of the whole film's
 range so ripples on a still film don't qualify. A bump counts when its prominence
-clears `need × scale`, `need` running from `PROM_LO` 0.85 down to `PROM_HI` 0.2 across
-the Sensitivity slider. Its span is where it stays `EDGE` (0.4) up its own height.
+clears `need × scale`, `need` running from `PROM_LO` 0.45 down to `PROM_HI` 0.15 across
+the Sensitivity slider.
 
-**The rhythm matters.** On real film one play shows up as two or three bumps a few
-seconds apart — the break of the huddle, the walk up to the line, the snap — so bumps
-within `CORE_GAP` 5 s join, capped at `CORE_MAX` 18 s. The cap is not optional: bumps
-carry on at that spacing all game, and without it a quiet minute of the camera sweeping
-the sideline becomes one 90 s "play".
+**How long the bump lasts is what tells a play from everything else.** The same stretch
+of film throws up a bump every 4–8 s all game — the teams gathering, the huddle
+breaking, the walk up to the line, the camera re-framing between plays — and they are
+all 3–5 s long. The snap is the long one: the play, the tackle and everybody getting up
+runs 8–14 s. Measured on NFHS film, every play checked by eye came out 8–14 s and every
+walk-up and camera sweep 3–5 s, with nothing in between. So a bump is a play when it
+lasts `minPlay` seconds, `PLAY_LO` 6 down to `PLAY_HI` 4 across the slider. That one
+test does the work three earlier attempts could not.
 
-Earlier versions used one motion threshold for the whole film and asked a play to hold
-a plateau for several seconds. On NFHS film that found 21 plays in a half when there
-were nearer 50: **plays come about every 20–30 s**, each lasting 5–10 s, so clips
-legitimately cover 60–70 % of the film — a short clip list is the symptom of a detector
-that is missing plays, not of a tidy one. The failure was that a camera pan in dead time
-reaches the same height as a play, so a threshold set high enough to reject the pans
-rejected every quiet play as well. Prominence does not fix that — a dead-time sweep is
-still a bump — so a handful of dead-time clips is the price of finding the plays, and
-the Sensitivity slider is the lever.
+Its span is measured down to `lo`, the local lull, **not** to the higher of its own two
+shoulders: a kickoff return keeps the picture moving for half a minute, so its shoulders
+sit high and measuring to them made the longest play of the game look like the shortest
+and lost it. A play must also have settled within `SETTLE` 8 s before it — below `QUIET`
+× the film's 15th percentile — because the teams huddle or at least stand at the line
+first, and a camera sweeping an empty field never does.
 
-Each play then starts at the break of the huddle: from the snap, skip ≤ 4 s of still
-(the set), then walk back through motion above `walk` (a quarter of the way from `lo`
-to `hi`) until 2 s of still (the huddle), bounded by the previous play's end and
-`HUDDLE_MAX` 20 s; no walk-up → `PRE` 2 s before the snap. Ends `POST` 5 s after. Two
-clips are joined only when they genuinely overlap: one that merely backs up to where
-the last one ended is the next play, not more of the last one.
+Earlier versions used one motion threshold for the whole film, or asked a play to hold a
+plateau. On NFHS film those found 21 plays in a half when there were nearer 40: a camera
+pan in dead time reaches the same height as a play, so a threshold set high enough to
+reject the pans rejected every quiet play too — and quiet is what a snap looks like with
+the camera parked and the players small in frame. Judge by the clock: the clips should
+land about one per 20–30 s of live football, and a short list means plays are being
+missed, not that the list is tidy.
+
+A clip is then `PRE` 5 s before the bump (the owner's words: "snap backwards 5 seconds
+is great" — the bump starts within a second or two of the snap) to `POST` 5 s after it,
+never starting before the previous play's clip ended. Two clips join only on genuine
+overlap: one that merely backs up to where the last one ended is the next play, not more
+of the last one.
 
 **Replays**: `red[i]` is the per-mille of bright-red pixels in the top-right corner
 (right 25 %, top 25 %), for the NFHS "replay" badge. A sample is replay when it is > 10

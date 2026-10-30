@@ -33,20 +33,20 @@ moves the picture while the same snap with the camera chasing the ball moves all
 and both are plays. It judges each moment against the half-minute around it rather than
 against the whole game, so a quiet stretch isn't measured by the standard of a busy one.
 
-A play usually shows up as two or three stirs a few seconds apart — the break of the
-huddle, the walk to the line, the snap — so those are kept together as one play.
-Expect roughly one clip every 20–30 seconds of live football; on a full half that is
-50-odd clips covering most of the film, because that is what football is. Dead time the
-camera sweeps across — a long stoppage, the walk down the field after a score — can
-still look like a play, so a few clips will be ones you delete; **Sensitivity** trades
-those against missed plays.
+The stir that counts is **the long one**. Film throws up a stir every few seconds — the
+teams gathering, the huddle breaking, the walk to the line, the camera swinging round —
+and all of those are over in three or four seconds. A play isn't: the snap, the tackle
+and everyone getting up takes eight to fourteen. That is how it picks the snap out.
 
-Each play runs from the break of the huddle (it looks back from the snap for the walk up
-to the line, at most 20 s) to 5 s after the whistle; with no huddle to see (no-huddle,
-or the camera was off), it starts 2 s before the snap. **Replays** (the red "replay"
-badge in the top-right corner, as on NFHS Network film) and **black screens** (the
-sponsor card either side of a replay, or an ad break) are skipped, and a play's clip
-stops where one begins.
+Each clip starts **five seconds before the snap**, so you see the teams set and the ball
+go, and ends five seconds after the whistle. Expect roughly one clip per 20–30 seconds
+of live football. Dead time the camera sweeps across — a long stoppage, the walk down
+the field after a score — can still look like a play, so a few clips will be ones you
+delete; **Sensitivity** trades those against missed plays.
+
+**Replays** (the red "replay" badge in the top-right corner, as on NFHS Network film)
+and **black screens** (the sponsor card either side of a replay, or an ad break) are
+skipped, and a play's clip stops where one begins.
 
 About the clips: picking a folder needs Chrome or Edge on a computer; other browsers
 download the clips one by one. Clips are cut without re-encoding, so it takes seconds
