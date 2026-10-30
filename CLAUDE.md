@@ -113,9 +113,11 @@ seeking is exact.
 joined — see `JOIN`);
 a game has 120–140 plays. Sampling by hand: about half of the original 340 were
 football, the rest pre-game, the halftime crowd, sidelines and dead time. After joining,
-clip spacing during live play peaks at 40–50 s — about right for football — so what is
-left over sits mostly in the stretches that are not football at all: pre-game, halftime
-and after the final whistle, roughly 70 of the 236 here.
+clip spacing during live play peaks at 40–50 s — about right for football. Counted
+against the scoreboard, only **20 of the 236 are outside the game** (6 before kickoff,
+14 after the final whistle). The other 216 are inside live football: mostly the camera
+on the crowd or the sideline between plays. An earlier note here blamed pre-game,
+halftime and post-game for the bulk; that was wrong, and the count above is why.
 
 Lowering the default does **not** help: the 99 clips the default adds over Sensitivity
 0.25 were sampled and are only about 70 % junk, so dropping them would cost real plays.

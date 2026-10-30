@@ -44,9 +44,9 @@ Each clip starts **five seconds before the snap**, so you see the teams set and 
 go, and ends five seconds after the whistle.
 
 On a whole game you will still get more clips than there were plays. It can't always
-tell a play from the camera swinging round, from warm-ups, or from the crowd on the
-field at halftime — on screen those move just as much as a snap does. The extras sit
-mostly before kickoff, at halftime and after the final whistle.
+tell a play from the camera swinging round to the crowd or down the sideline between
+plays — on screen those move just as much as a snap does. Only a handful of the extras
+are before kickoff or after the final whistle; most are during the game itself.
 
 So it also shows you **one picture per play, taken as the ball goes**. You can ignore it
 and just press Cut into clips — or click any picture that isn't football and it drops
