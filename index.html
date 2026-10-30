@@ -107,7 +107,7 @@
 <div class="wrap film">
   <h1>🎬 Film Cutter</h1>
   <div class="sub">Open a full game — get every play, with the dead time cut out.
-    <span class="ver">v2026.10.29.7</span></div>
+    <span class="ver">v2026.10.29.8</span></div>
   <div class="family">Same family as <a href="../FormationDrawer/">🏈 Formation Drawer</a></div>
 
     <p class="film-note">Turns a full game into one video per play, from the break of the huddle to 5 s after
@@ -167,8 +167,11 @@
 const STEP = 1;                    // seconds of game time between motion samples
 const PRE = 2, POST = 5;           // seconds kept before the snap (no huddle found) and after the whistle
 const HUDDLE_MAX = 20;             // furthest back from the snap a play can start (break of huddle)
-const BASE = 90;                   // seconds either side that set the local motion baseline
-const HOLD = 0.6;                  // a play's edges: how far back towards the baseline it may sag
+const BASE = 30;                   // seconds either side that set the local motion baseline
+const PROM_LO = 0.85, PROM_HI = 0.2;  // how far a bump must rise clear of the lulls, at the
+                                   // bottom and top of the Sensitivity slider
+const EDGE = 0.4;                  // a play runs while it is this far up its own bump
+const CORE_GAP = 5, CORE_MAX = 18; // bumps this close belong to one play, up to this long
 const SW = 96, SH = 54;            // sample frame size
 
 const fv = document.getElementById("fv");
@@ -354,53 +357,56 @@ function detect() {
   const dark = i => lum[i] != null && lum[i] < black;
   const brk = Array.from({length: n}, (_, i) => replay[i] || dark(i) || dark(i - 1));
 
-  // What counts as action follows the film. A fixed camera and a camera that pans and
-  // zooms to follow the ball put wildly different amounts of movement on screen, and
-  // one film often has both; with a single level for the whole film the busy stretches
-  // set the bar and every play in the quiet ones is lost. So the baseline (lo) and the
-  // busy level (hi) are taken over BASE seconds either side. They move slowly, so they
-  // are worked out every fifth sample and held in between.
+  // How much movement is worth noticing follows the film, over BASE seconds either
+  // side. A camera parked on the 50 and a camera panning and zooming to follow the ball
+  // put wildly different amounts of movement on screen and one film has both, so a
+  // single level for the whole game loses every play in the quiet stretches. lo is the
+  // lull between plays (20th percentile) and hi the busy level (90th); with a play
+  // every 20-30 s those land either side of the action. They move slowly, so they are
+  // worked out every fifth sample and held in between.
   const sens = +fSens.value;
-  const lo = new Array(n), hi = new Array(n), thr = new Array(n);
+  const lo = new Array(n), hi = new Array(n);
   for (let i = 0; i < n; i++) {
     if (!(i % 5)) {
       const w = [];
       for (let j = Math.max(0, i - BASE); j < Math.min(n, i + BASE); j++) if (!brk[j]) w.push(sm[j]);
       w.sort((a, b) => a - b);
-      lo[i] = w[Math.floor(w.length * 0.5)] || 0;
-      hi[i] = w[Math.floor(w.length * 0.95)] || 0;
+      lo[i] = w[Math.floor(w.length * 0.2)] || 0;
+      hi[i] = w[Math.floor(w.length * 0.9)] || 0;
     } else { lo[i] = lo[i-1]; hi[i] = hi[i-1]; }
-    thr[i] = lo[i] + Math.max(hi[i] - lo[i], 4) * (0.6 - sens * 0.55);
   }
-
-  // A play is a plateau, not a flick of the camera. Seed where the motion clears the
-  // threshold, grow out while it stays up (replay and black seconds stop it, so a play
-  // never stretches across one), and keep it only if it holds at half its own peak for
-  // a few seconds: the camera re-framing between plays spikes and dies inside 3 or 4 s,
-  // a play keeps going. The Sensitivity slider sets how few seconds will do.
-  const span = Math.max(2, Math.round(7.5 - sens * 5));
-  const seed = i => sm[i] > thr[i] && !brk[i];
-  const grow = i => i >= 0 && i < n && !brk[i] && sm[i] > lo[i] + (thr[i] - lo[i]) * HOLD;
-  const segs = [];
-  for (let i = 0; i < n; i++) {
-    if (!seed(i)) continue;
-    let a = i; while (grow(a - 1)) a--;
-    let b = i; while (grow(b + 1)) b++;
-    const p = segs[segs.length - 1];
-    if (p && a <= p.e) p.e = Math.max(p.e, b + 1); else segs.push({s: a, e: b + 1});
-    i = b;
+  // A play is a *bump*: the picture stirs, then settles again. What matters is how far
+  // it rises above the lulls either side — its prominence — not how high it reaches.
+  // A snap in front of a parked camera barely moves the picture and a snap the camera
+  // chases moves all of it, and both are plays; measured this way they score the same.
+  // The size that counts is local, with a floor tied to the whole film's range so that
+  // ripples on a still film don't qualify.
+  const all = [...sm].sort((a, b) => a - b);
+  const gRange = (all[Math.floor(n * 0.97)] || 0) - (all[Math.floor(n * 0.2)] || 0);
+  const scale = i => Math.max(hi[i] - lo[i], gRange * 0.12, 4);
+  const need = PROM_LO - sens * (PROM_LO - PROM_HI);    // the slider sets how clear a bump must be
+  const cores = [];
+  for (let i = 1; i < n - 1; i++) {
+    if (brk[i] || sm[i] <= sm[i-1] || sm[i] < sm[i+1]) continue;   // local maximum only
+    let a = i, aMin = sm[i];
+    while (a > 0 && i - a < BASE && !brk[a-1] && sm[a-1] <= sm[i]) { a--; aMin = Math.min(aMin, sm[a]); }
+    let b = i, bMin = sm[i];
+    while (b < n - 1 && b - i < BASE && !brk[b+1] && sm[b+1] <= sm[i]) { b++; bMin = Math.min(bMin, sm[b]); }
+    const base = Math.max(aMin, bMin), prom = sm[i] - base;
+    if (prom < need * scale(i)) continue;
+    const level = base + prom * EDGE;             // the bump's own shoulders
+    let s = i; while (s > 0 && !brk[s-1] && sm[s-1] > level) s--;
+    let e = i; while (e < n - 1 && !brk[e+1] && sm[e+1] > level) e++;
+    if (e - s + 1 < 2) continue;
+    // One play shows up as two or three bumps a few seconds apart — the break of the
+    // huddle, the walk up to the line, the snap — so near neighbours join. CORE_MAX
+    // stops that running away: bumps carry on at this spacing all game, and without a
+    // cap a whole quiet minute of the camera sweeping the sideline becomes one "play".
+    const p = cores[cores.length - 1];
+    if (p && s * STEP - p.e <= CORE_GAP && (e + 1) * STEP - p.s <= CORE_MAX) p.e = (e + 1) * STEP;
+    else cores.push({s: s * STEP, e: (e + 1) * STEP});
+    i = e;
   }
-  // Measured on med[], not the 3 s average: the average blurs a 2 s flick of the
-  // camera out to look as wide as a short play.
-  const held = g => {                           // seconds it holds at half its own peak
-    let peak = 0, at = g.s;
-    for (let i = g.s; i < g.e; i++) if (med[i] > peak) { peak = med[i]; at = i; }
-    const half = lo[at] + (peak - lo[at]) * 0.5;
-    let a = at; while (a > g.s && med[a-1] > half) a--;
-    let b = at; while (b < g.e - 1 && med[b+1] > half) b++;
-    return b - a + 1;
-  };
-  const cores = segs.filter(g => held(g) >= span).map(g => ({s: g.s * STEP, e: g.e * STEP}));
 
   const dur = fv.duration || n * STEP;
   let replays = 0;
@@ -416,7 +422,7 @@ function detect() {
   const out = [];
   cores.forEach((g, k) => {
     const i0 = Math.round(g.s / STEP);
-    const walk = lo[i0] + Math.max(thr[i0] - lo[i0], 2) * 0.25;
+    const walk = lo[i0] + Math.max(hi[i0] - lo[i0], 2) * 0.25;
     const prevEnd = k ? cores[k - 1].e + POST : 0;
     const floor = Math.max(0, prevEnd, g.s - HUDDLE_MAX);
     let s = Math.max(floor, g.s - PRE);
@@ -431,9 +437,12 @@ function detect() {
     while (j * STEP < e && !brk[j]) j++;         // a replay or black screen cuts the tail short
     e = Math.min(e, j * STEP);
     const p = out[out.length - 1];
-    if (p && s <= p.e) p.e = e; else out.push({s, e, call: ""});
+    // only genuine overlap joins two clips; one that merely backs up to where the last
+    // one ended is the next play, not more of the last one
+    if (p && s < p.e) p.e = Math.max(p.e, e); else out.push({s, e, call: ""});
   });
-  const all = [...sm].sort((a, b) => a - b);
+  // for the timeline: roughly how big a bump has to be around here to count
+  const thr = Array.from({length: n}, (_, i) => lo[i] + need * scale(i));
   return {plays: out, replays, det: {sm, thr, max: Math.max((all[Math.floor(n * 0.97)] || 0) * 1.4, 10)}};
 }
 function runDetect() {

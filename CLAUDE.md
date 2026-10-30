@@ -31,29 +31,40 @@ and the frame's mean brightness in `lum[]`. The grab canvas sets
 few source pixels per cell, so a camera that barely moves lands on different grass and
 the score doubles — on the real film the default halved the usable signal
 (median score 158 against 65 for a proper box filter). `detect()` = median-of-3 (kills camera-cut
-spikes) → 3-sample average → a threshold between the median and the 95th percentile **of
-the `BASE` 90 s either side**, not of the whole film, set by the Sensitivity slider.
-The baseline has to be local: a camera sitting still and a camera panning and zooming to
-follow the ball put wildly different amounts of movement on screen, one film has both,
-and with a single level the busy stretches set the bar and every play in the quiet ones
-is lost. (It is worked out every fifth sample and held in between; it moves slowly.)
+spikes) → 3-sample average → **bumps**.
 
-A play is then a **plateau, not a spike**: seed where smoothed motion clears the
-threshold, grow out while it stays above `HOLD` (0.7) of the way from baseline to
-threshold, and keep it only if it holds at half its own peak for `span` seconds
-(`7.5 − sens×5`, so 5 at the default). That last test is what tells a play from the
-camera re-framing between plays, which reaches the same height and dies inside 3–4 s.
-On a real NFHS half (a phone recording of the stream, 1440×1920 with the picture
-letterboxed inside it) this took the clips that cover no live ball at all from 12 of 36
-down to 5 of 23, and the clips that ran over a replay from 11 to 0. There is no
-gap-merging — growing while the motion stays up does that job, and only when the
-action genuinely never stopped.
+A play is a bump: the picture stirs and then settles again. What is measured is how far
+it rises clear of the lulls either side of it — its prominence — not how high it
+reaches. That matters because a snap in front of a parked camera barely moves the
+picture while a snap the camera chases moves all of it, and both are plays; by
+prominence they score alike. The size worth noticing is local: `lo` (20th percentile)
+and `hi` (90th) over `BASE` 30 s either side, with a floor at 12 % of the whole film's
+range so ripples on a still film don't qualify. A bump counts when its prominence
+clears `need × scale`, `need` running from `PROM_LO` 0.85 down to `PROM_HI` 0.2 across
+the Sensitivity slider. Its span is where it stays `EDGE` (0.4) up its own height.
+
+**The rhythm matters.** On real film one play shows up as two or three bumps a few
+seconds apart — the break of the huddle, the walk up to the line, the snap — so bumps
+within `CORE_GAP` 5 s join, capped at `CORE_MAX` 18 s. The cap is not optional: bumps
+carry on at that spacing all game, and without it a quiet minute of the camera sweeping
+the sideline becomes one 90 s "play".
+
+Earlier versions used one motion threshold for the whole film and asked a play to hold
+a plateau for several seconds. On NFHS film that found 21 plays in a half when there
+were nearer 50: **plays come about every 20–30 s**, each lasting 5–10 s, so clips
+legitimately cover 60–70 % of the film — a short clip list is the symptom of a detector
+that is missing plays, not of a tidy one. The failure was that a camera pan in dead time
+reaches the same height as a play, so a threshold set high enough to reject the pans
+rejected every quiet play as well. Prominence does not fix that — a dead-time sweep is
+still a bump — so a handful of dead-time clips is the price of finding the plays, and
+the Sensitivity slider is the lever.
 
 Each play then starts at the break of the huddle: from the snap, skip ≤ 4 s of still
-(the set), then walk back through motion above `walk` (a quarter of the way from the
-local baseline to the threshold) until 2 s of still (the huddle), bounded by the
-previous play's end and `HUDDLE_MAX` 20 s; no walk-up → `PRE` 2 s before the snap.
-Ends `POST` 5 s after.
+(the set), then walk back through motion above `walk` (a quarter of the way from `lo`
+to `hi`) until 2 s of still (the huddle), bounded by the previous play's end and
+`HUDDLE_MAX` 20 s; no walk-up → `PRE` 2 s before the snap. Ends `POST` 5 s after. Two
+clips are joined only when they genuinely overlap: one that merely backs up to where
+the last one ended is the next play, not more of the last one.
 
 **Replays**: `red[i]` is the per-mille of bright-red pixels in the top-right corner
 (right 25 %, top 25 %), for the NFHS "replay" badge. A sample is replay when it is > 10

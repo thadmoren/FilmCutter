@@ -26,13 +26,20 @@ Under step 2, **Number the clips, starting at** sets the first number (`play-001
 named by where it starts in the game instead (`play-at-0h12m05s`). It remembers your choice.
 
 How it finds plays: it steps through the film once per second and measures how much of
-the picture changed; the stretches where that movement **starts and keeps going** are
-plays. The "keeps going" part matters: between plays the camera swings round to the new
-line of scrimmage, which moves the picture just as much as a play does but is over in
-three or four seconds, so a burst that dies away that fast is thrown out. It also judges
-each stretch against the minute or so around it rather than against the whole game,
-because a camera that sits still and a camera that follows the ball look nothing alike
-and most films have both.
+the picture changed. A play is a **stir that settles** — the picture comes alive and
+then goes quiet again — and what counts is how far it rises above the quiet either side,
+not how big it looks. That matters because a snap filmed from a parked camera barely
+moves the picture while the same snap with the camera chasing the ball moves all of it,
+and both are plays. It judges each moment against the half-minute around it rather than
+against the whole game, so a quiet stretch isn't measured by the standard of a busy one.
+
+A play usually shows up as two or three stirs a few seconds apart — the break of the
+huddle, the walk to the line, the snap — so those are kept together as one play.
+Expect roughly one clip every 20–30 seconds of live football; on a full half that is
+50-odd clips covering most of the film, because that is what football is. Dead time the
+camera sweeps across — a long stoppage, the walk down the field after a score — can
+still look like a play, so a few clips will be ones you delete; **Sensitivity** trades
+those against missed plays.
 
 Each play runs from the break of the huddle (it looks back from the snap for the walk up
 to the line, at most 20 s) to 5 s after the whistle; with no huddle to see (no-huddle,
