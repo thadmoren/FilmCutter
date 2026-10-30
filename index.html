@@ -129,7 +129,7 @@
 <div class="wrap film">
   <h1>🎬 Film Cutter</h1>
   <div class="sub">Open a full game — get every play, with the dead time cut out.
-    <span class="ver">v2026.10.29.12</span></div>
+    <span class="ver">v2026.10.29.13</span></div>
   <div class="family">Same family as <a href="../FormationDrawer/">🏈 Formation Drawer</a></div>
 
     <p class="film-note">Turns a full game into one video per play, from 5 s before the snap to 5 s after
@@ -201,6 +201,7 @@ const PROM_LO = 0.45, PROM_HI = 0.15;  // how far a bump must rise clear of the 
                                    // bottom and top of the Sensitivity slider
 const EDGE = 0.4;                  // a play runs while it is this far up its own bump
 const FOOT = 0.12, FOOT_MAX = 8;   // and starts where it first rose this far, up to 8 s earlier
+const JOIN = 0;                    // clips this close together are one stretch of film
 const PLAY_LO = 6, PLAY_HI = 4;    // seconds a bump must last to be a play, across the slider
 const SW = 96, SH = 54;            // sample frame size
 
@@ -486,9 +487,11 @@ function detect() {
     while (j * STEP < e && !brk[j]) j++;         // a replay or black screen cuts the tail short
     e = Math.min(e, j * STEP);
     const p = out[out.length - 1];
-    // only genuine overlap joins two clips; one that merely backs up to where the last
-    // one ended is the next play, not more of the last one
-    if (p && s < p.e) p.e = Math.max(p.e, e); else out.push({s, e, call: ""});
+    // Two clips that run straight into each other are one piece of film, not two
+    // plays: real plays sit 25-40 s apart, so anything that butts up against the one
+    // before is the same stretch of action chopped in half. JOIN seconds of slack
+    // covers the gap a clip's own lead-in and tail leave behind.
+    if (p && s - p.e <= JOIN) p.e = Math.max(p.e, e); else out.push({s, e, call: ""});
   });
   // for the timeline: roughly how big a bump has to be around here to count
   const thr = Array.from({length: n}, (_, i) => lo[i] + need * scale(i));

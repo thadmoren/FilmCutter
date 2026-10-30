@@ -43,13 +43,15 @@ the snap out.
 Each clip starts **five seconds before the snap**, so you see the teams set and the ball
 go, and ends five seconds after the whistle.
 
-**Then you pick.** It can't always tell a play from the camera swinging round, from
-warm-ups, or from the crowd on the field at halftime — on screen they move just as much
-as a snap does. So when it has finished it shows you **one picture per play, taken as
-the ball goes**. Click any that aren't football and they drop out; the count on **Cut
-into clips** follows. Nothing is thrown away — **Keep all** puts them back, and the ▶ by
-a picture plays that bit if you're not sure. On a whole game expect to bin a fair few:
-the pre-game, halftime and after the final whistle all make clips.
+On a whole game you will still get more clips than there were plays. It can't always
+tell a play from the camera swinging round, from warm-ups, or from the crowd on the
+field at halftime — on screen those move just as much as a snap does. The extras sit
+mostly before kickoff, at halftime and after the final whistle.
+
+So it also shows you **one picture per play, taken as the ball goes**. You can ignore it
+and just press Cut into clips — or click any picture that isn't football and it drops
+out, and the count on **Cut into clips** follows. Nothing is thrown away: **Keep all**
+puts them back, and the ▶ by a picture plays that bit if you're not sure.
 
 **Replays** (the red "replay" badge in the top-right corner, as on NFHS Network film)
 and **black screens** (the sponsor card either side of a replay, or an ad break) are

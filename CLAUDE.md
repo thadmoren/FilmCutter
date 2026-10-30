@@ -108,13 +108,17 @@ seeking is exact.
 
 ## Picking the plays by eye
 
-**On a whole game the finder hands back roughly twice as many clips as there are
-plays, and that cannot be tuned away.** A 3 h 19 m NFHS recording gives 340 clips;
-a game has 120–140 plays. Sampling 25 of the 340 by hand: about half were football,
-the rest pre-game, the halftime crowd, sidelines and dead time. The arithmetic is the
-point — wound all the way down the finder still makes ~1.1 clips a minute and a real
-game is ~0.7 plays a minute, so no setting of the dials reaches the right number; it
-just starts dropping plays while still handing over hundreds.
+**On a whole game the finder still hands back more clips than there are plays.** A
+3 h 19 m NFHS recording gives 236 (340 before clips that run into each other were
+joined — see `JOIN`);
+a game has 120–140 plays. Sampling by hand: about half of the original 340 were
+football, the rest pre-game, the halftime crowd, sidelines and dead time. After joining,
+clip spacing during live play peaks at 40–50 s — about right for football — so what is
+left over sits mostly in the stretches that are not football at all: pre-game, halftime
+and after the final whistle, roughly 70 of the 236 here.
+
+Lowering the default does **not** help: the 99 clips the default adds over Sensitivity
+0.25 were sampled and are only about 70 % junk, so dropping them would cost real plays.
 
 Five ways to tell a play from the camera wandering were tried and **measured against
 plays timed by hand, and every one of them overlaps**: motion left after cancelling the
@@ -127,7 +131,13 @@ bottom and a compact box bottom-right), both of which stay on screen showing not
 during halftime, so "is the overlay there" is useless and reading it means handling both
 layouts. Don't repeat these; the evidence is in the session, not in the code.
 
-So the last word is the owner's. After the finder runs, `#fPick` shows **one thumbnail
+**Clips that run into each other are one piece of film.** Real plays sit 25–40 s apart,
+so a clip butting up against the one before is a single stretch of action chopped in
+half — 123 of the first 340 were. `JOIN` (0 s of slack) glues them back; more slack
+chains clips into 160 s monsters, so do not raise it. This took the game from 340 to
+236 and the old half from 47 to 36 without losing a single hand-timed snap.
+
+The owner still gets the last word on what is left. After the finder runs, `#fPick` shows **one thumbnail
 per play, taken `PRE` seconds in — where the ball goes** — and clicking one drops it.
 Dropped plays keep a `p.off` flag: they stay in the list and in storage (nothing is
 lost, "Keep all" puts them back) but `kept()` skips them, so they are left out of the
