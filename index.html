@@ -107,7 +107,7 @@
 <div class="wrap film">
   <h1>🎬 Film Cutter</h1>
   <div class="sub">Open a full game — get every play, with the dead time cut out.
-    <span class="ver">v2026.10.29.10</span></div>
+    <span class="ver">v2026.10.29.11</span></div>
   <div class="family">Same family as <a href="../FormationDrawer/">🏈 Formation Drawer</a></div>
 
     <p class="film-note">Turns a full game into one video per play, from 5 s before the snap to 5 s after
@@ -165,11 +165,12 @@
 // where smoothed motion clears a threshold set by the Sensitivity slider and then
 // keeps going, so a re-detect after moving the slider needs no rescan.
 const STEP = 1;                    // seconds of game time between motion samples
-const PRE = 5, POST = 5;           // seconds kept before the snap and after the whistle
+const PRE = 4, POST = 5;           // seconds kept before the snap and after the whistle
 const BASE = 30;                   // seconds either side that set the local motion baseline
 const PROM_LO = 0.45, PROM_HI = 0.15;  // how far a bump must rise clear of the lulls, at the
                                    // bottom and top of the Sensitivity slider
 const EDGE = 0.4;                  // a play runs while it is this far up its own bump
+const FOOT = 0.12, FOOT_MAX = 8;   // and starts where it first rose this far, up to 8 s earlier
 const PLAY_LO = 6, PLAY_HI = 4;    // seconds a bump must last to be a play, across the slider
 const SW = 96, SH = 54;            // sample frame size
 
@@ -384,13 +385,24 @@ function detect() {
   const gRange = (all[Math.floor(n * 0.97)] || 0) - (all[Math.floor(n * 0.2)] || 0);
   const scale = i => Math.max(hi[i] - lo[i], gRange * 0.12, 4);
   const need = PROM_LO - sens * (PROM_LO - PROM_HI);    // the slider sets how clear a bump must be
+  // for picking out the high points, a replay or black second reads as the lull: the
+  // cut itself is not movement on the field, and a play whose last second runs into
+  // one must still be allowed to be the top of its own bump
+  const mv = Array.from({length: n}, (_, i) => brk[i] ? lo[i] : sm[i]);
   const bumps = [];
   for (let i = 1; i < n - 1; i++) {
-    if (brk[i] || sm[i] <= sm[i-1] || sm[i] < sm[i+1]) continue;   // local maximum only
+    if (brk[i] || mv[i] <= mv[i-1] || mv[i] < mv[i+1]) continue;   // local maximum only
+    // Walking out to the lull either side. A replay or a black screen counts as the
+    // lull itself: the broadcast cut away, so as far as this bump is concerned the
+    // movement stopped there. Without that, a play the director cuts a replay on top
+    // of — which is to say the best plays in the game — has no quiet on that side, so
+    // it scores no prominence at all and is thrown away.
     let a = i, aMin = sm[i];
     while (a > 0 && i - a < BASE && !brk[a-1] && sm[a-1] <= sm[i]) { a--; aMin = Math.min(aMin, sm[a]); }
+    if (a > 0 && brk[a-1]) aMin = Math.min(aMin, lo[i]);
     let b = i, bMin = sm[i];
     while (b < n - 1 && b - i < BASE && !brk[b+1] && sm[b+1] <= sm[i]) { b++; bMin = Math.min(bMin, sm[b]); }
+    if (b < n - 1 && brk[b+1]) bMin = Math.min(bMin, lo[i]);
     const base = Math.max(aMin, bMin), prom = sm[i] - base;
     if (prom < need * scale(i)) continue;
     // How long it lasts is measured down to the lull level, not to the higher of its
@@ -410,7 +422,18 @@ function detect() {
   // of the camera is over in 4 or 5. That single test throws out the lot of them.
   const minPlay = Math.max(3.5, PLAY_LO - sens * (PLAY_LO - PLAY_HI));
   const cores = [];
-  for (const g of bumps) if (g.e - g.s >= minPlay) cores.push({s: g.s * STEP, e: g.e * STEP});
+  for (const g of bumps) {
+    if (g.e - g.s < minPlay) continue;
+    // Back up to the foot of the bump before measuring the lead-in. A play that builds
+    // to a big peak — a long run with the camera chasing — is well under way by the
+    // time it reaches the level its length was measured at, and PRE from there would
+    // start the clip after the ball had gone.
+    let peak = 0;
+    for (let i = g.s; i < g.e; i++) peak = Math.max(peak, sm[i]);
+    let s = g.s;
+    while (s > 0 && g.s - s < FOOT_MAX && !brk[s-1] && sm[s-1] > lo[s] + (peak - lo[s]) * FOOT) s--;
+    cores.push({s: s * STEP, e: g.e * STEP});
+  }
 
   const dur = fv.duration || n * STEP;
   let replays = 0;

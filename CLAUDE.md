@@ -58,6 +58,18 @@ shoulders. A play that runs straight into something else — a kickoff with the 
 in on top of it — never gets back down on that side, so its shoulder sits high and
 measuring to it made a real play look seconds long and lost it.
 
+**A replay or black second reads as the lull**, both when picking out high points (`mv`)
+and when walking out to the shoulders. Without that, the director cutting a replay on
+top of a play — which is to say on top of the best plays in the game — leaves it with no
+quiet on that side at all: it scores no prominence, and the peak often lands on the
+cut itself so it is not even seen as a high point. That alone was losing the play at
+18:35 on the NFHS half, a long run with the replay cut straight in after it.
+
+The clip then backs up to the **foot** of the bump — where the motion first rose `FOOT`
+(0.12) of the way to the peak, at most `FOOT_MAX` 8 s — before `PRE` is applied. A play
+that builds to a big peak is well under way by the time it reaches the level its length
+was measured at, and PRE from there started the clip after the ball had gone.
+
 A "has it settled first?" test was tried here — the teams huddle before a play and a
 camera sweeping an empty field does not — and **removed**: it threw out a real snap
 (13:57 on the NFHS half, where the teams were still walking up 8 s before) to save about
@@ -71,11 +83,11 @@ the camera parked and the players small in frame. Judge by the clock: the clips 
 land about one per 20–30 s of live football, and a short list means plays are being
 missed, not that the list is tidy.
 
-A clip is then `PRE` 5 s before the bump (the owner's words: "snap backwards 5 seconds
-is great" — the bump starts within a second or two of the snap) to `POST` 5 s after it,
-never starting before the previous play's clip ended. Two clips join only on genuine
-overlap: one that merely backs up to where the last one ended is the next play, not more
-of the last one.
+A clip is then `PRE` 4 s before the foot of the bump to `POST` 5 s after its end, never
+starting before the previous play's clip ended. That lands 6–8 s before the snap on real
+film (the owner's words: "snap backwards 5 seconds is great"). Two clips join only on
+genuine overlap: one that merely backs up to where the last one ended is the next play,
+not more of the last one.
 
 **Replays**: `red[i]` is the per-mille of bright-red pixels in the top-right corner
 (right 25 %, top 25 %), for the NFHS "replay" badge. A sample is replay when it is > 10
