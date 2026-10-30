@@ -133,6 +133,33 @@ bottom and a compact box bottom-right), both of which stay on screen showing not
 during halftime, so "is the overlay there" is useless and reading it means handling both
 layouts. Don't repeat these; the evidence is in the session, not in the code.
 
+**"The offence is set for a second before the snap" does not survive contact with the
+picture**, and it is the first thing anyone thinks of, so here is how far it was taken.
+At one sample a second, stillness before the stir drops real plays as fast as it drops
+junk: of twelve clips judged by eye either side of the cut, seven of the rejects were
+live football with the clock running. Sampling the eight seconds before each candidate
+at **8 frames a second** doesn't rescue it (stillest second: plays 1–23, junk 1–13), and
+nor does **cancelling the camera's movement first** and measuring only the players, at
+192×108 with a ±6 px best-fit slide (plays 4–41, junk 5–32). The reason it can't work is
+structural, not a matter of resolution or thresholds: a still picture before a snap is
+the same still picture as the camera parked between plays, a banner, or an empty field —
+the stillest clip in the whole sample is the team running out through a banner — while
+plenty of real snaps are filmed by an operator still re-framing, so they never freeze at
+all. The best cut found loses about a quarter of the plays to remove about 60 % of the
+junk, which is the trade that got the old "settled first" rule deleted.
+
+**The shape of the camera's track** — following a ball carrier should be a steady pan
+one way, swinging to the crowd an out-and-back — was measured too, as net displacement
+over distance travelled across the ten seconds from the stir, at 8 frames a second.
+Plays 0.05–1.00, junk 0.03–1.00. It fails for a reason worth knowing: on this film the
+camera is wide and nearly locked, so most tracks are **all zeros** and there is no shape
+to read. Expect that of fixed-camera film generally.
+
+**Two things the detector may never rely on**, because the owner's films won't always
+have them: the **scorebug** (it may be absent, or present but not live) and the
+**audio** (it may be missing). Anything built on either is dead on arrival, whatever it
+scores on this one film.
+
 **Clips that run into each other are one piece of film.** Real plays sit 25–40 s apart,
 so a clip butting up against the one before is a single stretch of action chopped in
 half — 123 of the first 340 were. `JOIN` (0 s of slack) glues them back; more slack
