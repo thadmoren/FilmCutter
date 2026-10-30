@@ -107,7 +107,7 @@
 <div class="wrap film">
   <h1>🎬 Film Cutter</h1>
   <div class="sub">Open a full game — get every play, with the dead time cut out.
-    <span class="ver">v2026.10.29.9</span></div>
+    <span class="ver">v2026.10.29.10</span></div>
   <div class="family">Same family as <a href="../FormationDrawer/">🏈 Formation Drawer</a></div>
 
     <p class="film-note">Turns a full game into one video per play, from 5 s before the snap to 5 s after
@@ -171,7 +171,6 @@ const PROM_LO = 0.45, PROM_HI = 0.15;  // how far a bump must rise clear of the 
                                    // bottom and top of the Sensitivity slider
 const EDGE = 0.4;                  // a play runs while it is this far up its own bump
 const PLAY_LO = 6, PLAY_HI = 4;    // seconds a bump must last to be a play, across the slider
-const SETTLE = 8, QUIET = 2.0;     // a play has a still moment this near its start
 const SW = 96, SH = 54;            // sample frame size
 
 const fv = document.getElementById("fv");
@@ -384,10 +383,6 @@ function detect() {
   const all = [...sm].sort((a, b) => a - b);
   const gRange = (all[Math.floor(n * 0.97)] || 0) - (all[Math.floor(n * 0.2)] || 0);
   const scale = i => Math.max(hi[i] - lo[i], gRange * 0.12, 4);
-  // "settled" is judged against the whole film's idea of still, not the neighbourhood:
-  // where the camera sweeps for a minute the neighbourhood is never still, and that is
-  // exactly the stretch to throw out.
-  const quiet = (all[Math.floor(n * 0.15)] || 0) * QUIET + 2;
   const need = PROM_LO - sens * (PROM_LO - PROM_HI);    // the slider sets how clear a bump must be
   const bumps = [];
   for (let i = 1; i < n - 1; i++) {
@@ -398,10 +393,10 @@ function detect() {
     while (b < n - 1 && b - i < BASE && !brk[b+1] && sm[b+1] <= sm[i]) { b++; bMin = Math.min(bMin, sm[b]); }
     const base = Math.max(aMin, bMin), prom = sm[i] - base;
     if (prom < need * scale(i)) continue;
-    // How long it lasts is measured down to the lull level, not to the higher of the
-    // two shoulders. A kickoff return keeps the picture moving for half a minute, so
-    // its own shoulders sit high and measuring to them would make the longest play of
-    // the game look like the shortest.
+    // How long it lasts is measured down to the lull level, not to the higher of its
+    // own two shoulders. A play that runs straight into something else — a kickoff
+    // with the replay cut in on top of it — never gets back down on that side, so its
+    // shoulder sits high and measuring to it made a real play look seconds long.
     const level = lo[i] + Math.max(sm[i] - lo[i], 0) * EDGE;
     let s = i; while (s > 0 && !brk[s-1] && sm[s-1] > level) s--;
     let e = i; while (e < n - 1 && !brk[e+1] && sm[e+1] > level) e++;
@@ -413,16 +408,9 @@ function detect() {
   // in between — and only one of them is the play. The snap is the long one: a play
   // plus the tackle plus everyone getting up runs 8-13 s, while a walk-up or a flick
   // of the camera is over in 4 or 5. That single test throws out the lot of them.
-  const minPlay = Math.max(4, Math.round(PLAY_LO - sens * (PLAY_LO - PLAY_HI)));
+  const minPlay = Math.max(3.5, PLAY_LO - sens * (PLAY_LO - PLAY_HI));
   const cores = [];
-  for (const g of bumps) {
-    if (g.e - g.s < minPlay) continue;
-    // A play also settles before it: the teams huddle, or at least stand at the line.
-    // The camera sweeping an empty field never does.
-    let settled = false;
-    for (let i = Math.max(0, g.s - SETTLE); i <= g.s; i++) if (!brk[i] && sm[i] <= quiet) settled = true;
-    if (settled) cores.push({s: g.s * STEP, e: g.e * STEP});
-  }
+  for (const g of bumps) if (g.e - g.s >= minPlay) cores.push({s: g.s * STEP, e: g.e * STEP});
 
   const dur = fv.duration || n * STEP;
   let replays = 0;

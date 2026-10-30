@@ -50,17 +50,21 @@ all 3–5 s long. The snap is the long one: the play, the tackle and everybody g
 runs 8–14 s. Measured on NFHS film, every play checked by eye came out 8–14 s and every
 walk-up and camera sweep 3–5 s, with nothing in between. So a bump is a play when it
 lasts `minPlay` seconds, `PLAY_LO` 6 down to `PLAY_HI` 4 across the slider. That one
-test does the work three earlier attempts could not.
+test does the work three earlier attempts could not. A kickoff is no different, by the
+way — it is 10–14 s like any other play; what is long is the replay that follows it.
 
 Its span is measured down to `lo`, the local lull, **not** to the higher of its own two
-shoulders: a kickoff return keeps the picture moving for half a minute, so its shoulders
-sit high and measuring to them made the longest play of the game look like the shortest
-and lost it. A play must also have settled within `SETTLE` 8 s before it — below `QUIET`
-× the film's 15th percentile — because the teams huddle or at least stand at the line
-first, and a camera sweeping an empty field never does.
+shoulders. A play that runs straight into something else — a kickoff with the replay cut
+in on top of it — never gets back down on that side, so its shoulder sits high and
+measuring to it made a real play look seconds long and lost it.
+
+A "has it settled first?" test was tried here — the teams huddle before a play and a
+camera sweeping an empty field does not — and **removed**: it threw out a real snap
+(13:57 on the NFHS half, where the teams were still walking up 8 s before) to save about
+nine points of dead-time coverage. Not worth a play.
 
 Earlier versions used one motion threshold for the whole film, or asked a play to hold a
-plateau. On NFHS film those found 21 plays in a half when there were nearer 40: a camera
+plateau. On NFHS film those found 21 plays in a half when there were nearer 45: a camera
 pan in dead time reaches the same height as a play, so a threshold set high enough to
 reject the pans rejected every quiet play too — and quiet is what a snap looks like with
 the camera parked and the players small in frame. Judge by the clock: the clips should

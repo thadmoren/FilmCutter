@@ -36,7 +36,8 @@ against the whole game, so a quiet stretch isn't measured by the standard of a b
 The stir that counts is **the long one**. Film throws up a stir every few seconds — the
 teams gathering, the huddle breaking, the walk to the line, the camera swinging round —
 and all of those are over in three or four seconds. A play isn't: the snap, the tackle
-and everyone getting up takes eight to fourteen. That is how it picks the snap out.
+and everyone getting up takes eight to fourteen, kickoffs included. That is how it picks
+the snap out.
 
 Each clip starts **five seconds before the snap**, so you see the teams set and the ball
 go, and ends five seconds after the whistle. Expect roughly one clip per 20–30 seconds
