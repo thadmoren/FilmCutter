@@ -129,7 +129,7 @@
 <div class="wrap film">
   <h1>🎬 Film Cutter</h1>
   <div class="sub">Open a full game — get every play, with the dead time cut out.
-    <span class="ver">v2026.10.29.13</span></div>
+    <span class="ver">v2026.10.30.1</span></div>
   <div class="family">Same family as <a href="../FormationDrawer/">🏈 Formation Drawer</a></div>
 
     <p class="film-note">Turns a full game into one video per play, from 5 s before the snap to 5 s after
@@ -203,7 +203,12 @@ const EDGE = 0.4;                  // a play runs while it is this far up its ow
 const FOOT = 0.12, FOOT_MAX = 8;   // and starts where it first rose this far, up to 8 s earlier
 const JOIN = 0;                    // clips this close together are one stretch of film
 const PLAY_LO = 6, PLAY_HI = 4;    // seconds a bump must last to be a play, across the slider
+const MEN_FRAC = 0.65;             // a clip showing fewer than this share of the film's
+const MEN_RUN = 3;                 // usual head count, in a stretch of this many in a
+const MEN_MIN = 12;                // row, is set aside — unless the film never shows a
+                                   // field full of players, when the count means nothing
 const SW = 96, SH = 54;            // sample frame size
+const PW = 320, PH = 180;          // bigger frame for counting the men out on the grass
 
 const fv = document.getElementById("fv");
 const fFile = document.getElementById("fFile");
@@ -224,6 +229,7 @@ let fKey = null, fName = "", fUrl = null, fFileObj = null;
 let motion = [];                   // motion[i] = changed pixels (per mille) ending at i*STEP
 let red = [];                      // red[i] = bright-red pixels (per mille) in the top-right corner at i*STEP
 let lum = [];                      // lum[i] = mean brightness (0-255) at i*STEP; black = ad break
+let men = [];                      // men[i] = man-sized lumps standing in grass at i*STEP
 let det = null;                    // {sm, thr, max} from the last detect, for the timeline
 let plays = [];                    // [{s, e, call}] in seconds, sorted by start
 let edited = false;                // true once plays were touched by hand
@@ -245,6 +251,18 @@ const rcv = document.createElement("canvas");
 rcv.width = RW; rcv.height = RH;
 const rctx = rcv.getContext("2d", {willReadFrequently: true});
 rctx.imageSmoothingQuality = "high";
+// Counting people on the field needs more of the picture than motion does: at 96x54 a
+// player is a pixel or two. At 320x180 he is a small compact lump of not-grass with
+// turf all round him — which is what separates a man on the field from the crowd in
+// the stands and from the team packed along the near touchline, who are lumps too.
+const pcv = document.createElement("canvas");
+pcv.width = PW; pcv.height = PH;
+const pctx = pcv.getContext("2d", {willReadFrequently: true});
+pctx.imageSmoothingQuality = "high";
+const grass = new Uint8Array(PW * PH);     // kept between samples; a scan reuses them
+const seen = new Uint8Array(PW * PH);
+const stack = new Int32Array(PW * PH);
+const sat = new Int32Array((PW + 1) * (PH + 1));
 
 function fmt(t) {
   const h = Math.floor(t / 3600), m = Math.floor(t / 60) % 60, s = t % 60;
@@ -281,6 +299,47 @@ function redness() {               // per mille of bright-red pixels in the top-
     if (d[i] > 140 && d[i] > d[i+1] * 1.8 && d[i] > d[i+2] * 1.8) n++;
   return Math.round(n / (RW * RH) * 1000);
 }
+const MEN_MINPX = 5, MEN_MAXPX = 150, MEN_BOX = 24, MEN_RING = 14, MEN_TURF = 0.55;
+function onField() {               // how many man-sized lumps are standing in grass
+  pctx.drawImage(fv, 0, 0, PW, PH);
+  const d = pctx.getImageData(0, 0, PW, PH).data;
+  for (let i = 0; i < PW * PH; i++) {
+    const r = d[i*4], g = d[i*4+1], b = d[i*4+2];
+    grass[i] = (g > r * 1.06 && g > b * 1.12 && g > 30) ? 1 : 0;
+  }
+  // running totals of grass, so "how much turf is round this lump" is one subtraction
+  for (let y = 0; y < PH; y++) for (let x = 0; x < PW; x++)
+    sat[(y+1)*(PW+1) + x+1] = grass[y*PW + x] + sat[y*(PW+1) + x+1] + sat[(y+1)*(PW+1) + x] - sat[y*(PW+1) + x];
+  const box = (x0, y0, x1, y1) => sat[(y1+1)*(PW+1) + x1+1] - sat[y0*(PW+1) + x1+1]
+    - sat[(y1+1)*(PW+1) + x0] + sat[y0*(PW+1) + x0];
+  seen.fill(0);
+  let n = 0;
+  for (let y = 0; y < PH; y++) for (let x = 0; x < PW; x++) {
+    const p = y * PW + x;
+    if (grass[p] || seen[p]) continue;
+    let sp = 0, sz = 0, sx = 0, sy = 0, minx = x, maxx = x, miny = y, maxy = y;
+    stack[sp++] = p; seen[p] = 1;
+    while (sp) {                              // everything joined on to this lump
+      const q = stack[--sp], qy = (q / PW) | 0, qx = q % PW;
+      sz++; sx += qx; sy += qy;
+      if (qx < minx) minx = qx; if (qx > maxx) maxx = qx;
+      if (qy < miny) miny = qy; if (qy > maxy) maxy = qy;
+      if (qx > 0 && !grass[q-1] && !seen[q-1]) { seen[q-1] = 1; stack[sp++] = q-1; }
+      if (qx < PW-1 && !grass[q+1] && !seen[q+1]) { seen[q+1] = 1; stack[sp++] = q+1; }
+      if (qy > 0 && !grass[q-PW] && !seen[q-PW]) { seen[q-PW] = 1; stack[sp++] = q-PW; }
+      if (qy < PH-1 && !grass[q+PW] && !seen[q+PW]) { seen[q+PW] = 1; stack[sp++] = q+PW; }
+    }
+    const w = maxx - minx + 1, h = maxy - miny + 1;
+    // a player is small and solid; a painted yard line is long and thin, the crowd is huge
+    if (sz < MEN_MINPX || sz > MEN_MAXPX || w > MEN_BOX || h > MEN_BOX || sz < w * h * 0.25) continue;
+    const cx = Math.round(sx / sz), cy = Math.round(sy / sz);
+    const x0 = Math.max(0, cx - MEN_RING), y0 = Math.max(0, cy - MEN_RING);
+    const x1 = Math.min(PW - 1, cx + MEN_RING), y1 = Math.min(PH - 1, cy + MEN_RING);
+    const area = (x1 - x0 + 1) * (y1 - y0 + 1);
+    if ((box(x0, y0, x1, y1) - sz) / (area - sz) >= MEN_TURF) n++;   // turf all round him
+  }
+  return n;
+}
 function changed(a, b) {           // per mille of pixels whose luma moved noticeably
   let n = 0;
   for (let i = 0; i < a.length; i++) if (Math.abs(a[i] - b[i]) > 18) n++;
@@ -290,21 +349,22 @@ function changed(a, b) {           // per mille of pixels whose luma moved notic
 /* --- saving: per file, keyed by name + size --- */
 function save() {
   if (!fKey) return;
-  try { localStorage.setItem(fKey, JSON.stringify({motion, red, lum, plays, edited, sens: fSens.value})); } catch (e) {}
+  try { localStorage.setItem(fKey, JSON.stringify({motion, red, lum, men, plays, edited, sens: fSens.value})); } catch (e) {}
 }
 function restore() {
   let d = null;
   try { d = JSON.parse(localStorage.getItem(fKey) || "null"); } catch (e) {}
-  motion = (d && d.motion) || []; red = (d && d.red) || []; lum = (d && d.lum) || []; plays = (d && d.plays) || []; edited = !!(d && d.edited);
+  motion = (d && d.motion) || []; red = (d && d.red) || []; lum = (d && d.lum) || []; men = (d && d.men) || [];
+  plays = (d && d.plays) || []; edited = !!(d && d.edited);
   if (d && d.sens) fSens.value = d.sens;
   if (motion.length) { const r = detect(); det = r.det; if (!edited) plays = r.plays; }
   else det = null;
 }
 
 /* --- scanning --- */
-// how far the film has been sampled; a scan saved before brightness was recorded has
-// no lum[], so it counts as unscanned and is taken again
-const done = () => Math.min(motion.length, red.length, lum.length);
+// how far the film has been sampled; a scan saved before brightness, or before the
+// head count, was recorded is short of one of these and so is taken again
+const done = () => Math.min(motion.length, red.length, lum.length, men.length);
 const scanned = () => done() && done() * STEP >= fv.duration - STEP;
 // resolves true once the whole film is scanned, false if stopped or declined
 function scan() {
@@ -317,7 +377,7 @@ function scan() {
     i = 0;
   }
   thumbRun++;                                 // a scan takes the video over
-  if (!i) { motion = []; red = []; lum = []; plays = []; cur = -1; edited = false; det = null; renderPlays(); renderPick(); }
+  if (!i) { motion = []; red = []; lum = []; men = []; plays = []; cur = -1; edited = false; det = null; renderPlays(); renderPick(); }
   let prev = null, stopped = false;
   const t0 = performance.now(), i0 = i;
 
@@ -345,6 +405,7 @@ function scan() {
       else motion[i] = 0;
       red[i] = redness();
       lum[i] = Math.round(g.reduce((a, v) => a + v, 0) / g.length);
+      men[i] = onField();
       prev = g;
       if (i % 20 === 0) {
         const rate = (i - i0 + 1) / (performance.now() - t0), left = (dur / STEP - i) / rate / 1000;
@@ -493,6 +554,30 @@ function detect() {
     // covers the gap a clip's own lead-in and tail leave behind.
     if (p && s - p.e <= JOIN) p.e = Math.max(p.e, e); else out.push({s, e, call: ""});
   });
+  // Nobody out on the grass, nobody playing football. Counting men standing in turf at
+  // the snap is the one thing found that tells football from the camera on a banner, an
+  // empty field or the team lined up along the touchline — the stillness of the set
+  // offence does not survive the picture, but the fact that eleven of them are standing
+  // out there does. Judged against the film's own usual count, like everything else
+  // here, and skipped on a film that never shows a field full of players, where the
+  // count means nothing. These are set aside, not deleted: "Keep all" brings them back.
+  // One quiet clip on its own is as likely to be a quiet play as anything else, and
+  // judging them one at a time picked off real snaps in the middle of live football.
+  // A stretch of MEN_RUN in a row with nobody out there is halftime or the end of the
+  // game, and that is what gets set aside.
+  if (men.length) {
+    const head = out.map(p => men[Math.max(0, Math.round((p.s + PRE) / STEP) - 1)] || 0);
+    const mid = [...head].sort((a, b) => a - b)[head.length >> 1] || 0;
+    if (mid >= MEN_MIN) {
+      const bare = head.map(v => v < mid * MEN_FRAC);
+      for (let i = 0; i < bare.length; ) {
+        if (!bare[i]) { i++; continue; }
+        let j = i; while (j < bare.length && bare[j]) j++;
+        if (j - i >= MEN_RUN) for (let k = i; k < j; k++) out[k].off = true;
+        i = j;
+      }
+    }
+  }
   // for the timeline: roughly how big a bump has to be around here to count
   const thr = Array.from({length: n}, (_, i) => lo[i] + need * scale(i));
   return {plays: out, replays, det: {sm, thr, max: Math.max((all[Math.floor(n * 0.97)] || 0) * 1.4, 10)}};

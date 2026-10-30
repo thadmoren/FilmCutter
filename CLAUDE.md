@@ -113,11 +113,13 @@ seeking is exact.
 joined — see `JOIN`);
 a game has 120–140 plays. Sampling by hand: about half of the original 340 were
 football, the rest pre-game, the halftime crowd, sidelines and dead time. After joining,
-clip spacing during live play peaks at 40–50 s — about right for football. Counted
-against the scoreboard, only **20 of the 236 are outside the game** (6 before kickoff,
-14 after the final whistle). The other 216 are inside live football: mostly the camera
-on the crowd or the sideline between plays. An earlier note here blamed pre-game,
-halftime and post-game for the bulk; that was wrong, and the count above is why.
+clip spacing during live play peaks at 40–50 s — about right for football. A count here once claimed, from the scoreboard, that only 20 of the 236 were outside the
+game. **That count was wrong, because the NFHS scorebug is not always live**: at 1h21m
+it reads "2nd 09:48" over a shot of the team running out through a banner. Judged from
+the pictures instead, there is a solid block of halftime (roughly 1h15m–1h32m, banners
+and the teams lined up along the touchline) and a post-game block after about 2h51m.
+The rest are inside live football: the camera on the crowd or the sideline, huddles,
+timeouts and the milling about at the end of a quarter.
 
 Lowering the default does **not** help: the 99 clips the default adds over Sensitivity
 0.25 were sampled and are only about 70 % junk, so dropping them would cost real plays.
@@ -132,6 +134,44 @@ NFHS alternates **two different overlay layouts within one game** (a wide bar ac
 bottom and a compact box bottom-right), both of which stay on screen showing nothing
 during halftime, so "is the overlay there" is useless and reading it means handling both
 layouts. Don't repeat these; the evidence is in the session, not in the code.
+
+## Counting the men on the grass
+
+**The one thing that does separate football from the camera wandering.** `men[i]` is how
+many man-sized lumps of not-grass are standing *in* grass at `i*STEP`, from a 320×180
+colour frame (`onField()`): grass is green beating red and blue, a lump is 5–150 joined
+pixels no more than 24 across and not long and thin (which drops the painted yard
+lines), and it counts only if `MEN_TURF` 0.55 of a ±14 px box around it is turf. That
+last test is what does the work: the crowd in the stands and the team packed along the
+near touchline are lumps too, and without it sideline shots sail through — it took the
+junk caught from 5 of 14 to 8 of 14 with no play lost.
+
+A clip's count at the snap is compared with the median across the film's own clips —
+relative, like everything else here — and **a clip is only set aside as part of a run of
+`MEN_RUN` (3) in a row** below `MEN_FRAC` (0.65) of that median. The run is what makes
+it safe. Judged one clip at a time, the page picked off real snaps in the middle of live
+football (#94, #97, #162 on the game) for a cut that was lossless on ffmpeg frames; a
+lone quiet clip is as likely to be a quiet play as anything else, but three in a row is
+halftime. It is skipped entirely when the median is under `MEN_MIN` 12, which is a film
+that never shows a field full of players: the synthetic test films score zero and keep
+all 10 plays, as they must.
+
+On the 3 h 19 m game this sets aside **27 of 236 clips — 236 down to 209 — losing none of
+32 plays labelled by eye, at every point on the Sensitivity slider**. What it removes,
+checked frame by frame, is the halftime block (#103–#122, 1h17m–1h32m: the banner, the
+crowd on the pitch, the teams lined up) and the end of the game (#226–#233, 2h55m–3h02m:
+the empty field, then Bellevue running to their fans in a mass with the home crowd
+already on the pitch). Clips are set `off`, not deleted, so "Keep all" brings them back.
+
+**Tune this on samples the browser took.** On ffmpeg frames the same idea scored 36
+clips with nothing lost; the page, scanning the same film, set aside 30 and took a real
+play with them. The relative cut travels better than an absolute one but it does not
+travel perfectly. `scratchpad/pw/men.js` dumps a browser scan including `men`, and
+`final2.js` replays the page's own `detect()` over it across the slider.
+
+**It needs 320×180 colour, not the 96×54 grey the motion uses.** At 96×54 a player is a
+pixel or two and there is nothing to count. This is why adding it forces a rescan:
+`done()` includes `men.length`.
 
 **"The offence is set for a second before the snap" does not survive contact with the
 picture**, and it is the first thing anyone thinks of, so here is how far it was taken.
@@ -154,6 +194,19 @@ over distance travelled across the ten seconds from the stir, at 8 frames a seco
 Plays 0.05–1.00, junk 0.03–1.00. It fails for a reason worth knowing: on this film the
 camera is wide and nearly locked, so most tracks are **all zeros** and there is no shape
 to read. Expect that of fixed-camera film generally.
+
+**Three more that looked good on the game and were not.** *Dropping clips over 35 s*
+is lossless on the game's labelled plays and removes 5 of 14 junk — and loses **2 of
+the old film's 13 hand-timed snaps**, because `JOIN` merges a play with whatever ran
+into it, so a long clip often has a real play inside. Any safe threshold (>45 s) catches
+one junk clip and is not worth having. *Dropping clips that butt up against the one
+before* (<8 s gap) costs a play for 5 junk. *How spread out the lumps are* is no signal
+at all — the obvious way to tell a huddle from a formation, and it fails twice over:
+plays 64–108 against junk 60–116 with every lump counted, and plays 69–101 against
+huddles and sideline shots 61–104 counting only the men on turf. There are always other
+players, officials and the far touchline scattered about, so nothing is ever tightly
+bunched. Always regression-test against the old film's
+hand-timed snaps before believing a rule that looks lossless on one game.
 
 **Two things the detector may never rely on**, because the owner's films won't always
 have them: the **scorebug** (it may be absent, or present but not live) and the

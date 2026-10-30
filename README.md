@@ -17,7 +17,7 @@ Two steps, on a computer in Chrome or Edge:
 
 1. **Choose game video.** It stays on your device; nothing is uploaded.
 2. **Cut into clips.** Pick a folder, and it finds every play and saves each one there
-   as its own video file. Finding the plays takes a few minutes per hour of film; **Stop**
+   as its own video file. Finding the plays takes five to ten minutes per hour of film; **Stop**
    keeps what's done and the next **Cut into clips** picks up there, even after closing
    the tab. On a whole game, look through the pictures it shows you first and drop the
    ones that aren't plays — then Cut into clips saves only the ones you kept.
@@ -43,10 +43,19 @@ the snap out.
 Each clip starts **five seconds before the snap**, so you see the teams set and the ball
 go, and ends five seconds after the whistle.
 
-On a whole game you will still get more clips than there were plays. It can't always
-tell a play from the camera swinging round to the crowd or down the sideline between
-plays — on screen those move just as much as a snap does. Only a handful of the extras
-are before kickoff or after the final whistle; most are during the game itself.
+It also **counts the players out on the grass**. Football means a dozen or more men
+standing on turf; a banner, an empty field, the team lined up along the touchline at
+halftime and the crowd on the pitch afterwards do not. Where several clips in a row show
+far fewer men than the rest of the film, they're set aside for you — on a whole game
+that was halftime and the end, 27 clips of 236, without dropping a single play. (It has
+to be several in a row: one quiet clip on its own may just be a quiet play.) They
+aren't deleted: they
+show as dropped in the pictures below, and **Keep all** brings them back.
+
+You will still get more clips than there were plays. It can't always tell a play from
+the camera swinging round to the crowd or down the sideline between plays, or from a
+huddle or a timeout — there are players on the grass for those too. Most of what's left
+over is during the game itself.
 
 So it also shows you **one picture per play, taken as the ball goes**. You can ignore it
 and just press Cut into clips — or click any picture that isn't football and it drops
