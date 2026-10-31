@@ -208,6 +208,174 @@ players, officials and the far touchline scattered about, so nothing is ever tig
 bunched. Always regression-test against the old film's
 hand-timed snaps before believing a rule that looks lossless on one game.
 
+## What is left over, labelled properly
+
+Everything above was measured against clips labelled from **one** frame each. That is
+not enough to judge by, and the owner said so before the evidence did: shown the
+picker, he answered "I'm not sure I could tell from thumbnails". He is right. Labelling
+needs **three frames across the clip** (snap+2, +6, +10 — `scratchpad/ingame.js` builds
+the sheets); at one frame a huddle and a snap look the same. Clip #129 of the game was
+labelled a play from one frame and is, in three, players walking about with the clock
+frozen. Treat any single-frame label here as a coin toss, this file's own included.
+
+Labelled that way, **36 consecutive clips from the middle of the second half (#123–#158,
+1h32m–2h00m) came out 17 snaps, 13 not football, and 6 that three frames still could not
+settle.** The 13 are halftime warm-up lines that run on past the head-count block,
+huddles, the camera on the near bench, players milling with the clock stopped, and one
+replay tail. That ratio — a bit under half the clips in live football are not snaps —
+is the leftover the head count cannot reach, and this is the first set of labels good
+enough to measure against.
+
+**Three more ideas died against it.**
+
+*The rhythm of the game.* The intuition is strong: football comes round every 25–40 s,
+so a clip arriving too soon after a play is suspect, and the whole film should be fitted
+as a sequence rather than 236 separate guesses. **There is no rhythm to fit.** Between
+labelled snaps the real interval runs **17 s to 298 s** (median 58) — hurry-up at one end,
+timeout plus change of possession at the other. Gap back to the previous clip: snaps
+17–64 s, junk 13–105 s, and the junk's median is the *higher* of the two, because huddles
+and sideline shots happen in the long dead stretches. Suppressing a clip that arrives
+within T of the last kept one buys 4 junk for 1 snap at T=25 and 5 for 1 at T=30 — the
+same bad trade the <8 s gap rule was rejected for.
+
+*How far the head count dips inside the clip.* Real promise here, and it is the one to
+pick up again if anything is: a snap ends in a pile, the lumps merge, and the count
+falls to **zero in 12 of the 17 snaps but only 1 of the 13 junk clips** — and that one is
+the replay tail of a real play. But the converse is not safe. Dropping clips whose count
+never reaches zero costs 5 of 17 snaps to catch 12 of 13 junk; at any threshold the
+trade sits near **3 junk for every snap lost**, worse than rules already rejected.
+Combining it with peak motion does not improve it: the two interleave completely.
+
+*How hard the picture moves at the peak of the clip.* On the game it looks like the
+answer — snaps peak at 303–952 (median 854), junk at 35–912 (median 405) — and a cut at
+0.7 of the film's median peak loses none of the 17 snaps while dropping 49 of 236 clips.
+**It fails the old film outright**: the same relative cut loses **3 of the 12 findable
+hand-timed snaps**, 4 at 0.8. The reason is written higher up this file — a snap in front
+of a parked camera barely moves the picture. On the old film real snaps sit at 0.61–2.64
+of the median peak, so half of them are *below* it. Any absolute height test, however it
+is normalised, kills the quiet plays. Do not try this again.
+
+**Where that leaves it.** Eleven hand-made measurements have now been tried and measured
+against labels, and the only one that works is the head count, which reaches halftime and
+the end of the game and nothing inside it. The pattern is the finding: "is this
+football?" does not fit in a few numbers chosen by hand.
+
+## All 236 clips, labelled — and the model that was fitted to them
+
+`play-labels.json` in this folder is **every clip of the 3 h 19 m game judged three
+frames at a time**: 125 snaps, 97 not football, 14 that three frames could not settle.
+It is the most expensive thing in this project — an hour of reading contact sheets — and
+it cannot be regenerated without the film (`~/Desktop/Bellevue vs Mount Si/`), so do not
+delete it. Clip numbers index the 236-clip list at Sensitivity 0.5. `scratchpad/sheets.js`
+rebuilds the sheets; the per-batch files record *why* each call was made.
+
+Labelling got much firmer once the NFHS overlay was read **by the labeller, never by the
+detector**: a clock that advances across the three frames is a snap, a frozen one is not,
+and a distance that grows while the clock sits still is a pre-snap penalty (#58, #84,
+#168 are all flags, not plays). This also caught the commonest shape of junk — a clip
+holding at a frozen clock immediately before the clip that is the actual snap (#85 then
+#86, #172 then #173, #189 then #190, #199 then #200).
+
+**A 15-feature logistic regression over those labels does not work, and the way it fails
+is worth keeping.** Features were all ratios against the film's own middle (length, peak
+and mean motion, rise, fall, where the peak sits, gaps either side, brightness, whether a
+replay follows within 15 s, and five head-count numbers). Five-fold cross-validation on
+**contiguous blocks** of film, never random folds — neighbouring clips share a camera
+position and a drive, so random folds let it see its own answers.
+
+- It **ranks** at 76 % (50 % is chance), better than any single measurement here.
+- But with the threshold chosen honestly — on the training folds, never on the fold being
+  scored — it removes **7–12 % of the junk while losing 3–4 snaps in 125**. At any cut
+  conservative enough to lose no snap it removes **nothing**. The first draft of this
+  measurement picked the cut just under the lowest true snap *in the test fold*, which
+  flattered it to 33 %; that is choosing the answer after seeing it.
+- On the **old film it does not transfer at all**. Real hand-timed snaps there score 0.31
+  to 0.86, scattered over the whole range, several in the bottom quarter; a cut at 0.4
+  loses 4 of the 12 findable ones. It learned this game, not football.
+
+What the weights do confirm, and both are already known: **the head count falling to zero**
+(+1.28 — a snap ends in a pile and the lumps merge) and **a replay following within 15 s**
+(+1.09 — NFHS only replays football) are the two strongest signals available. Everything
+else is noise by comparison.
+
+So a learned model is not the shortcut it looks like: with ~200 labels it can only weight
+features that are already weak. The honest next step is a better *feature*, not a better
+fitter — and the one that has never been tried is **two facing lines**. The owner's son
+pointed at it sideways ("you can tell a play is coming when the referee spots the ball").
+Spotting the referee himself is a dead end — at 900 px wide the officials are plainly
+visible, but they are just as visible in the junk run-ups (#45 has three of them standing
+about, #51 one alone), and the thing a person actually recognises is the *act* of placing
+the ball, which needs full-resolution frames several times a second, roughly 150× the
+pixels the scan samples. But what the spot *causes* is visible by 2 s before every snap:
+both teams formed into two rows a yard apart. That is not the "how spread out are they"
+test that failed twice — it is whether the lumps split into two tight lines with a gap.
+It needs about 640×360 to resolve the gap; at 320×180 the two rows merge.
+
+## The ball itself is visible — the best lead in the project
+
+The owner's son was right and the first write-up above was wrong to settle for "the
+referee is a dead end". **At 1920×1080 the spotted ball is plainly there**: roughly
+20×18 px, brown leather with the white stripe showing, sitting on the turf waiting for
+the teams to line up (`scratchpad/ballzoom.js` cuts an 8× window; clip #42 at +2 s,
+full-frame (1010, 515) is a textbook example). The film is 1920×1080 at 25 fps.
+
+**But it cannot be found by any simple rule, and the attempt is worth reading before
+anyone tries again.** Two finders were built and both missed the ball on frames where it
+is clearly visible to the eye, while returning 3–19 false candidates each.
+
+*The colour is not what it looks like.* A first measurement said "R 147, G 107, B 133 —
+red and blue both above green". **That number was an artefact**: it was the median of each
+channel taken separately, which describes no actual pixel. Printing the real pixels
+(`scratchpad/ballmap.js`) shows the truth, and it is much worse:
+
+- On clip #42 the ball sits on the **pink midfield "WILDCATS" logo**, and the logo paint
+  has the *same* hue order (red and blue over green) over a region 33 px wide. The ball
+  and the paint are not separable by colour there at all.
+- On clip #208, where the ball lies on **clean turf**, it is not brown to the sensor:
+  around it the pixels run (146,157,144) and similar — green roughly level with red and
+  blue — and its centre reads as a small *bright* blob, much like the white hash marks.
+
+So the ball is desaturated by the floodlights and reads differently depending on what it
+is lying on. The "brown ball" a person sees in a zoomed crop is local contrast, not an
+absolute colour a threshold can key on.
+
+*And the field is full of look-alikes.* A plain "small thing standing alone on turf" test
+finds **105 of them in a single frame** — the hash marks. The painted logos and end zones
+add large regions with ball-like hue. The ball also frequently rests **on** a painted
+line, so any "everything that is not grass" segmentation fuses the two into one long blob
+that fails every size test.
+
+*A third attempt asked the right question and settled it.* Colour is the wrong key,
+because the answer changes with what the ball lies on; what the eye actually does is spot
+**a small thing that differs from whatever is around it**. So: mean colour of a
+ball-sized box minus the mean of the ring around it, over the whole frame, ranked
+(`scratchpad/ball3.js`, `ball4.js`). This is background-independent by construction and
+is the strongest form of the idea. The ball was **not among the 355 candidates** on clean
+turf, nor among 343 on the logo — so the contrast at its exact position was measured
+directly, against the rest of the frame:
+
+| | ball's contrast | frame median | where the ball ranks |
+|---|---|---|---|
+| on clean turf (#208) | 23.8 | 9.4 | **77th percentile** |
+| on the pink logo (#42) | 45.2 | 10.5 | **91st percentile** |
+
+**About 400,000 places in the frame stand out more than the ball does.** It is barely
+above the median. Players, lines, numbers, helmets, the crowd and the sidelines are all
+more locally distinctive than the thing the game is played with.
+
+**Verdict: the ball is one of the LEAST conspicuous objects in the picture, and that is
+measured, not guessed.** No bottom-up method — colour, shape, local contrast — can pick
+it out without also picking out hundreds of thousands of other places. It looks obvious
+to a person only because a person already knows where to look: the eye uses the players
+and the formation to narrow attention to a few square yards, and *then* resolves the ball.
+That is top-down attention, and it is circular here — knowing where the line of scrimmage
+is, is the very thing the detector is trying to work out. Finding the ball is therefore
+harder than finding the play, not easier. Do not spend more on it.
+
+**If it is ever revisited**, the rule to aim at is not "is a ball visible" — a huddle has
+a spotted ball too — but **a ball spotted on the turf that then vanishes**, which is the
+snap. And verify in the browser, never on ffmpeg frames.
+
 **Two things the detector may never rely on**, because the owner's films won't always
 have them: the **scorebug** (it may be absent, or present but not live) and the
 **audio** (it may be missing). Anything built on either is dead on arrival, whatever it
@@ -221,6 +389,11 @@ chains clips into 160 s monsters, so do not raise it. This took the game from 34
 
 The owner still gets the last word on what is left. After the finder runs, `#fPick` shows **one thumbnail
 per play, taken `PRE` seconds in — where the ball goes** — and clicking one drops it.
+**One frame is not enough to judge by** — see "What is left over, labelled properly":
+the owner can't tell a snap from a huddle in a still, and neither can this file's own
+earlier labels. If the picker is ever meant to be used in earnest, the tile has to move
+(cycle three or four frames across the clip); the thumbnails are already fetched by
+second, so the frames are most of the way there.
 Dropped plays keep a `p.off` flag: they stay in the list and in storage (nothing is
 lost, "Keep all" puts them back) but `kept()` skips them, so they are left out of the
 clips, the CSV, the Mac script and the numbering, and the Cut button counts what is
