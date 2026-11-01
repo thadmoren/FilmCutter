@@ -140,7 +140,7 @@
 <div class="wrap film">
   <h1>🎬 Film Cutter</h1>
   <div class="sub">Open a full game — get every play, with the dead time cut out.
-    <span class="ver">v2026.10.31.7</span></div>
+    <span class="ver">v2026.10.31.8</span></div>
   <div class="family">Same family as <a href="../FormationDrawer/">🏈 Formation Drawer</a></div>
 
     <p class="film-note">Turns a full game into one video per play, from 5 s before the snap to 5 s after
@@ -150,8 +150,7 @@
       <li><span class="n">1</span><label class="filebtn">Choose game video<input type="file" id="fFile" accept="video/*" hidden></label>
         <span class="hint" id="fFileName">No video chosen yet.</span></li>
       <li><span class="n">2</span><button class="sm" id="fKey" type="button" title="Your Anthropic API key, kept in this browser only"></button>
-        <span class="hint">Optional. Add a key and Claude automatically sets aside the clips
-          that aren't football before anything is cut — about half the leftovers, for around $1.50 a game.</span></li>
+        <span class="hint" id="fKeyHint"></span></li>
       <li><span class="n">3</span><button id="fExp" disabled>Cut into clips</button>
         <span class="hint">Asks which folder to put the clips in, then does the rest.</span></li>
       <li class="opts"><label class="chk"><input type="checkbox" id="fNum" checked> Number the clips, starting at</label>
@@ -823,6 +822,13 @@ function showKey() {
   fKeyBtn.textContent = k ? `key ✓ …${k.slice(-4)}` : "add key";
   fKeyBtn.title = k ? "Saved in this browser. Click to change or remove it."
                  : "Paste your Anthropic API key (console.anthropic.com). Kept in this browser only.";
+  // say what is actually going to happen, not what could: with a key saved this step is
+  // not optional any more, it is a thing the next button will do and charge for
+  document.getElementById("fKeyHint").textContent = k
+    ? "On. Claude sorts the clips before any are cut and sets aside the ones that aren't " +
+      "football — about half the leftovers, for around $1.50 a game. Click to change or remove the key."
+    : "Optional. Add a key and Claude sorts the clips before any are cut, setting aside the " +
+      "ones that aren't football — about half the leftovers, for around $1.50 a game.";
 }
 // Cancel must never lose the key. prompt() returns null for Cancel and "" for an empty
 // box, and an earlier version treated both the same — so merely looking at the key erased
