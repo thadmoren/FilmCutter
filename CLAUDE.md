@@ -397,6 +397,97 @@ have them: the **scorebug** (it may be absent, or present but not live) and the
 **audio** (it may be missing). Anything built on either is dead on arrival, whatever it
 scores on this one film.
 
+## What the other programs do, and why none of it transfers
+
+Five primary sources were read in full. The short answer is that **nobody solves this
+problem from arbitrary film.** Everyone either reads a clock, pays a person, or changes
+the camera.
+
+- **Xie, Chang, Divakaran & Sun, ICASSP 2002** (*Structure Analysis of Soccer Video with
+  Hidden Markov Models*) is the foundational play/break paper and the closest match to
+  this project. Two features: **dominant colour ratio** (what share of the frame is grass)
+  and motion intensity. Sampled uniformly on a 3 s window stepping 1 s — explicitly *not*
+  at shot boundaries, because "shot detectors tend to give lots of false alarms due to
+  unpredictable camera motion". Every feature normalised against the mean and variance of
+  the whole clip. Six HMM topologies per state, trained on whole play/break chunks (short
+  chunks are 2–3 % worse and over-segment), then dynamic programming over a 2×2 play/break
+  transition matrix, λ = 0.25, worth +2.2 %. Result: **83.5 %** accuracy training on one
+  clip and testing on three others, 62 % of boundaries within 3 s — and the failure mode is
+  ours exactly: "**the algorithm suffers more from false alarms than misses**, as we have
+  observed that 91 % of the play-segments are correctly classified".
+- **Mahasseni, Chen, Fern & Todorovic, IAAI 2013** (*Detecting the Moment of Snap in
+  Real-World Football Videos*, Oregon State, written for a company with "over 13,000 high
+  school, college, and professional teams"). Read the input assumption before anything
+  else: "**our input for MOS estimation will be a video of a single football play**". The
+  clip is already cut; they only locate the snap inside it. They also **tried the
+  stillness-then-motion rule and rejected it** — "as our results will demonstrate later,
+  such an approach is not effective" — because optical flow, KLT and tangent distance all
+  measure pixel displacement, which scales with zoom and viewpoint. That is the same reason
+  the old "settled first" rule and the peak-motion rule died here, reached independently.
+  Their padding numbers justify `PRE`: cutting at the estimated snap gives **63 % bad cuts**,
+  one second earlier 11 %, two seconds earlier 8 %. Accuracy about 84 % within a second of
+  the true snap, after a field-boundary stage and an optical-flow "Variable Threshold
+  Image".
+- **US10237512B1, Assist Film LLC** (filed 2017, granted 2019) is the commercial method:
+  sample a frame a second, OCR the **play clock**, and open the window when it stops —
+  in football the play clock runs *between* plays. Pad about 3 s either side. This is the
+  scorebug, which is forbidden here.
+- **Hudl, Veo, Pixellot, Trace** publish no method, and the pattern is the point. Hudl
+  Assist is a paid service and Hudl says the basketball breakdown is done by "a team of
+  professional analysts". Veo follows the ball; Pixellot runs object detection; Trace does
+  not analyse the picture at all — it straps a GPS tracker to the player.
+- **SoccerNet** is the modern benchmark (tight average-mAP roughly 60–76 % depending on the
+  tolerance, over hundreds of hand-annotated broadcast games), and the CVPR 2024 CVsports
+  transfer study *Beyond the Premier* reports that models can usually tell that an event
+  happened but **tight localisation collapses on amateur footage**, with training-data
+  quality the bottleneck. That is the 15-feature model's "it learned this game, not
+  football", at scale.
+
+**The grass fraction was measured here and it fails.** It is the one feature in that
+literature the page did not already have, and `onField()` computes it for free — the
+corner of `sat[]` divided by `PW*PH`. `scratchpad/grass.js` sampled it a second at a time
+across the whole 3 h 19 m film; `grasscore.js` scored it against all 222 judged clips.
+
+| | snaps (125) | junk (97) |
+|---|---|---|
+| at the snap | 224 / **448** / 716 | 0 / **418** / 717 |
+| mean over the clip | 230 / **429** / 622 | 230 / **416** / 659 |
+| max over the clip | 260 / **510** / 737 | 271 / **507** / 736 |
+| min over the clip | 0 / **291** / 584 | 0 / **316** / 550 |
+
+(min / median / max.) The same picture four times over, and on the min the junk is the
+*higher* of the two. At a cut of 0.65× the film's median with a run of 3, the only three
+clips it sets aside are three the head count already has. Chosen to be lossless on the
+first half of the game it **loses 6 snaps on the second half** — the same way the peak-motion
+rule and the fitted model failed.
+
+**Two reasons, and both are permanent.** First, **this film has no production grammar.**
+Only **2.9 % of its seconds** fall below half the median grass; the camera is wide and
+locked on the field essentially all game. The Columbia feature works because a *television
+director* cuts between wide shots, medium shots and cutaways, and a break is shot close.
+A parent with a camcorder on a tripod does none of that, so there is no scale of view to
+read. Expect that of every film the owner brings. Second, **the measurement inverts on the
+thing that matters most**: players are not-grass, so an *empty* field scores the highest
+grass in the game. #223 (2h52m), #229 (2h57m) and #102 (1h16m) — post-game and a quarter
+break — sit in the top ten grassiest clips, above most real snaps. Grass fraction and the
+head count point in opposite directions exactly where the head count is right.
+
+So the whole play/break lineage rests on a feature that fixed-camera film does not carry.
+That is worth knowing before reading any more of that literature.
+
+**What the research did confirm.** Re-scored against all 125 labelled snaps rather than the
+32 the rule was built on, **the head count still sets aside 27 clips, every one of them
+junk, losing nothing** — and it holds from 0.60 to 0.70 on `MEN_FRAC`, so 0.65 sits in the
+middle of a plateau rather than on a knife edge. Four times the labels, same answer.
+
+**The one untried idea the literature points at is persistence, not a new feature.** What
+the HMM-plus-dynamic-programming machinery buys is not rhythm — intervals between snaps
+really do run 17 s to 298 s and there is nothing to fit, as measured above. It buys the
+fact that once the film is in a break it tends to *stay* in a break, so a run of weak
+seconds is evidence where one weak second is not. `MEN_RUN` 3 is a hand-made version of
+exactly that, and it is the only thing in this file that works. The lever to try next is
+applying the run idea to the features already recorded, not finding another feature.
+
 **Clips that run into each other are one piece of film.** Real plays sit 25–40 s apart,
 so a clip butting up against the one before is a single stretch of action chopped in
 half — 123 of the first 340 were. `JOIN` (0 s of slack) glues them back; more slack
