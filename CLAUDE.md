@@ -488,6 +488,63 @@ seconds is evidence where one weak second is not. `MEN_RUN` 3 is a hand-made ver
 exactly that, and it is the only thing in this file that works. The lever to try next is
 applying the run idea to the features already recorded, not finding another feature.
 
+## A vision model does it — the first thing that works inside the game
+
+Measured 2026-10-31 against all 222 judged clips. `scratchpad/judge/judge.js` cuts the
+page's own three frames per clip at 640 px, sends them to `claude-opus-5-5` and asks
+whether a play from scrimmage happens. Twelve hand-made measurements failed at this; the
+model does not.
+
+| | snaps kept | junk caught | snaps lost | junk per snap lost |
+|---|---|---|---|---|
+| every rejected idea | — | — | — | ~3 or worse |
+| head count (ships today) | 125/125 | 27/97 | **0** | lossless, halftime only |
+| model, no threshold | 116/125 | **96/97** | 9 | **10.7** |
+| model at confidence ≥0.90 | 125/125 | 46/97 | **0** | lossless |
+| **model ≥0.90 + head count** | **125/125** | **48/97** | **0** | **lossless** |
+
+**Half the junk in the game comes off, losing nothing** — and **21 of those 48 clips are
+ones the head count can never reach**, because they are inside live football: huddles, the
+teams walking up, milling about between downs. That is the leftover this file has called
+unsolved since the beginning.
+
+**The scoreboard adds nothing, which is the finding that matters most.** Two prompts were
+run: one told to judge from the players and warned the overlay may be frozen or absent, one
+free to read the clock. They score **identically** — 116/125 and 96/97 both ways — and
+disagree on **2 of 222 clips**. So the model is reading the game, not the scorebug, and the
+standing rule that the detector may never depend on an overlay is satisfied *by measurement*
+rather than by instruction. Picture-only is in fact the better of the two at the safe
+threshold (46 junk against 36 at ≥0.90). Use the picture prompt; `--clock` exists only to
+re-run this comparison on a new film.
+
+Why this worked where everything else failed is worth keeping: **the labels themselves were
+made by a person looking at exactly these three frames**, so the task was known to be
+solvable from this input before a line was written. Every failed idea was an attempt to
+compress "is this football?" into a few numbers. The model does not have to.
+
+**The nine snaps it loses are not stupid.** It reports a reason for each, and they are
+mostly *"the teams walk up and set, but nothing breaks open by the last frame"* (#44, #136,
+#153) — which is the three-frame window ending just before the snap. Some are probably
+mislabelled here rather than missed by the model. If this is pushed further, a fourth frame
+later in the clip is the obvious thing to try before anything cleverer.
+
+**Cost: $3.68 for everything above** — $1.51 for 222 clips on the picture prompt, $1.84 for
+the clock comparison, $0.33 for a 40-clip pilot. About **1.5¢ a clip**, so ~$1.50 a game on
+Opus 5.5, and the Batch API would halve it. Frames and answers are cached on disk, so
+re-running costs nothing.
+
+**What this does not yet prove.** One game, one camera, one night; the old regression film
+is gone, so there is no second film to check it on. Everything in this file that looked
+lossless on one game and failed on another failed exactly here. Before shipping it, run it
+on a film with no NFHS overlay, in daylight, from a different camera — the `--clock` /
+picture gap is the test to repeat, and it should stay near zero.
+
+**Shipping it is a real design problem, not a code problem.** The page is a single static
+file on GitHub Pages and an API key cannot live in one. The options are the owner pasting
+his own key into the page (localStorage), a small relay holding the key, or running it off
+the page entirely. It must stay optional: the app works offline with no account today, and
+that should remain true with the feature off.
+
 **Clips that run into each other are one piece of film.** Real plays sit 25–40 s apart,
 so a clip butting up against the one before is a single stretch of action chopped in
 half — 123 of the first 340 were. `JOIN` (0 s of slack) glues them back; more slack
