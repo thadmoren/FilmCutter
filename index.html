@@ -140,7 +140,7 @@
 <div class="wrap film">
   <h1>🎬 Film Cutter</h1>
   <div class="sub">Open a full game — get every play, with the dead time cut out.
-    <span class="ver">v2026.10.31.6</span></div>
+    <span class="ver">v2026.10.31.7</span></div>
   <div class="family">Same family as <a href="../FormationDrawer/">🏈 Formation Drawer</a></div>
 
     <p class="film-note">Turns a full game into one video per play, from 5 s before the snap to 5 s after
@@ -164,7 +164,6 @@
       <div class="pickbar">
         <strong id="fPickCount"></strong>
         <span class="hint">Three frames across each play, cycling — a still can't tell a snap from a huddle. Click any you don't want.</span>
-        <button class="sm" id="fAI" type="button" title="Ask Claude which clips are football. Needs your own API key.">Sharpen with AI</button>
         <button class="sm" id="fPickAll" type="button">Keep all</button>
       </div>
       <div id="fPick" class="pick"></div>
@@ -802,7 +801,6 @@ async function fillThumbs() {
    lives only in his browser — the call goes straight from the page to api.anthropic.com
    (the dangerous-direct-browser-access header is what makes that legal), so the film
    never goes anywhere and nothing is uploaded but three small stills per clip. */
-const fAI = document.getElementById("fAI");
 const fKeyBtn = document.getElementById("fKey");
 // The key is the owner's and stays in this browser. It is kept per site, so localhost and
 // the published page each hold their own — paste it once in whichever you use. The button
@@ -916,7 +914,6 @@ async function aiPass(opts = {}) {
   thumbRun++;                                      // the thumbnails must let go of the video
   const back = fv.currentTime, note = fMsg.textContent;
   fv.pause();
-  fAI.textContent = "Stop";
   const seek = t => new Promise(res => { fv.addEventListener("seeked", res, {once: true}); fv.currentTime = t; });
   let done = 0, bad = 0;
   const flying = new Set();            // requests in the air; each clears itself on landing
@@ -947,7 +944,6 @@ async function aiPass(opts = {}) {
     }
     await Promise.all(flying);
   } finally {
-    fAI.textContent = "Sharpen with AI";
     if (run === aiRun) aiRun = 0;
     fv.currentTime = back;
   }
@@ -963,7 +959,6 @@ async function aiPass(opts = {}) {
           : bad ? note : "Claude didn't find anything it was sure wasn't football.");
   setTimeout(fillThumbs, 60);
 }
-fAI.addEventListener("click", aiPass);
 
 fPickAll.addEventListener("click", () => {        // undo the lot and start again
   plays.forEach(p => delete p.off);
