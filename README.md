@@ -17,7 +17,8 @@ Two steps, on a computer in Chrome or Edge:
 
 1. **Choose game video.** It stays on your device; nothing is uploaded.
 2. **Cut into clips.** Pick a folder, and it finds every play and saves each one there
-   as its own video file. Finding the plays takes five to ten minutes per hour of film; **Stop**
+   as its own video file. Finding the plays takes five to ten minutes per hour of film, and
+   the list of plays grows as it goes, so you can watch it work; **Stop**
    keeps what's done and the next **Cut into clips** picks up there, even after closing
    the tab. On a whole game, look through the pictures it shows you first and drop the
    ones that aren't plays — then Cut into clips saves only the ones you kept.

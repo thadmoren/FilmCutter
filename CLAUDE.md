@@ -528,6 +528,27 @@ mostly *"the teams walk up and set, but nothing breaks open by the last frame"* 
 mislabelled here rather than missed by the model. If this is pushed further, a fourth frame
 later in the clip is the obvious thing to try before anything cleverer.
 
+**What survives it, from the owner's own first full run (2026-11-01).** He cut the whole
+3 h 19 m game with the pass on — 236 found, 52 set aside, **184 kept** (the measurement
+above predicted 48 set aside, so the page is doing on his film what it did on the labels) —
+and his verdict on the junk that was left was one sentence: *"all the clips that were bad
+were walking off penalties and timeouts."* Both are the same shape and it is the shape the
+prompt had no words for: **busy film with no snap in it.** An official walking the ball
+back ten yards with players drifting after him, or both teams loosely spread out in the
+middle of the field heading for their coaches, has men moving all over the frame across all
+three shots — which is what the prompt described a play as — and nobody is tackled and
+nothing piles up. This is also the one class of junk the detector *must* leave to the model:
+both sit on a stopped clock (forbidden), both keep a full field of men (so the head count
+is blind), and both move the picture as much as a play does (so peak motion is blind). The
+prompt now names them, with the converse spelled out too — a snap followed by a flag or a
+timeout is still a snap — because a flag is thrown *on* a play often enough that the
+obvious wording would have cost real plays.
+
+**That edit has not been re-measured.** The 125/125 and 48-junk figures in the table were
+taken with the earlier wording, and `play-labels.json` plus `scratchpad/judge/judge.js` can
+re-score it for about $1.50 (the frames are cached on disk; only the calls cost). Until that
+is run the table is evidence for the approach, not for the prompt now in the page.
+
 **Cost: $3.68 for everything above** — $1.51 for 222 clips on the picture prompt, $1.84 for
 the clock comparison, $0.33 for a 40-clip pilot. About **1.5¢ a clip**, so ~$1.50 a game on
 Opus 5.5, and the Batch API would halve it. Frames and answers are cached on disk, so
