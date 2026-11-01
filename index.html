@@ -140,7 +140,7 @@
 <div class="wrap film">
   <h1>🎬 Film Cutter</h1>
   <div class="sub">Open a full game — get every play, with the dead time cut out.
-    <span class="ver">v2026.10.31.4</span></div>
+    <span class="ver">v2026.10.31.5</span></div>
   <div class="family">Same family as <a href="../FormationDrawer/">🏈 Formation Drawer</a></div>
 
     <p class="film-note">Turns a full game into one video per play, from 5 s before the snap to 5 s after
@@ -826,15 +826,24 @@ function showKey() {
   fKeyBtn.title = k ? "Saved in this browser. Click to change or remove it."
                  : "Paste your Anthropic API key (console.anthropic.com). Kept in this browser only.";
 }
+// Cancel must never lose the key. prompt() returns null for Cancel and "" for an empty
+// box, and an earlier version treated both the same — so merely looking at the key erased
+// it. Nothing here removes a saved key without the owner saying so twice.
 function askKey(force) {
   const had = aiKey();
   if (had && !force) return had;
-  const k = (prompt(had ? `Replace the key ending …${had.slice(-4)}?\n` +
-      "Paste a new one, or clear the box to remove it."
+  const raw = prompt(had
+    ? `Your key ends …${had.slice(-4)}.\n` +
+      "Paste a different one to replace it, or press Cancel to leave it alone."
     : "Paste your Anthropic API key (console.anthropic.com).\n" +
-      "It is kept in this browser only and sent straight to Anthropic.", "") || "").trim();
-  if (k === "" && force) return setKey("") && "";     // cleared on purpose
-  return k ? setKey(k) : had;
+      "It is kept in this browser only and sent straight to Anthropic.", "");
+  if (raw === null) return had;                       // Cancel: change nothing
+  const k = raw.trim();
+  if (!k) {                                           // empty box: only if they mean it
+    if (had && confirm(`Remove the saved key ending …${had.slice(-4)}?`)) { setKey(""); return ""; }
+    return had;
+  }
+  return setKey(k);
 }
 fKeyBtn.addEventListener("click", () => askKey(true));
 showKey();
