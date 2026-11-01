@@ -72,6 +72,15 @@ it's sure aren't football, before anything gets cut. On a full game that's about
 junk gone, and in testing it didn't drop a single real play. Nothing is deleted — **Keep
 all** brings everything back. No key, no charge, and the app behaves exactly as before.
 
+**It also tells you what it's unsure about.** Claude answers on every clip and says how sure
+it is; it only sets one aside when it's certain, because being less strict than that starts
+dropping real plays. The rest of its doubts aren't wasted any more — those clips get an
+amber ring and a **?**, and **Only what Claude doubts** shows just those. On a full game
+that's about fifty pictures to glance through instead of two hundred, and most of what's in
+there is the timeouts and penalties. Nothing is dropped for you; you still decide. Its
+answers are also kept now, so closing the tab and cutting again costs nothing the second
+time.
+
 This one is optional and costs a little money, because it needs your own API key from
 [console.anthropic.com](https://console.anthropic.com) — about **$1.50 for a whole game**.
 The key is kept in your browser and sent only to Anthropic. Your film is never uploaded:

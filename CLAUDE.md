@@ -675,6 +675,27 @@ half — 123 of the first 340 were. `JOIN` (0 s of slack) glues them back; more 
 chains clips into 160 s monsters, so do not raise it. This took the game from 340 to
 236 and the old half from 47 to 36 without losing a single hand-timed snap.
 
+**The model's doubts are worth more than its certainties were.** `AI_CONF` 0.90 is the
+lossless bar and it stays there — the owner's own words, offered the trade, were "I don't
+want to lose real plays" — but everything below it was being thrown away, and that is where
+the junk he complained about lives. Read the `why` strings in the cached 3-frame answers:
+**20 of the 97 junk clips are named as a timeout, a penalty or an official in the model's
+own words, and only 9 of those are confident enough to drop at 0.90.** The rest sit at
+**0.68–0.88**. The page was paying for that judgement and discarding it.
+
+So a clip Claude called *not football* and did not set aside now gets an **amber ring and a
+`?`** in the picker (`unsure()` → `figure.doubt`), and `#fDoubtOnly` shows only those. It
+is lossless by construction — nothing is dropped, the owner's eye is the threshold — and it
+costs no extra API call. On the labelled game that is about fifty tiles to look through
+instead of two hundred. Do not be tempted to turn the band into a second, lower threshold
+that drops things: the curve is measured and in the section above (0.85 loses 2 snaps, 0.80
+loses 2, 0.75 loses 3), and 0.88's extra 2 clips on one film is noise.
+
+`aiSaid` is now **saved with the scan** (`ai:` in the per-film localStorage entry, keyed by
+snap second). It was in memory only, so closing the tab threw away a judgement on every clip
+in the game — about $1.50 — and the next cut paid for it again. CLAUDE.md claimed "a second
+cut of the same game goes straight through"; that was only true within one page load.
+
 The owner still gets the last word on what is left. After the finder runs, `#fPick` shows
 **three frames across each play, cycling** — at `PRE + SHOTS` (2, 6, 10 s), the same set
 the labelling used — and clicking a tile drops it. It was one still per play until
