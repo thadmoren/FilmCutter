@@ -140,7 +140,7 @@
 <div class="wrap film">
   <h1>🎬 Film Cutter</h1>
   <div class="sub">Open a full game — get every play, with the dead time cut out.
-    <span class="ver">v2026.10.31.5</span></div>
+    <span class="ver">v2026.10.31.6</span></div>
   <div class="family">Same family as <a href="../FormationDrawer/">🏈 Formation Drawer</a></div>
 
     <p class="film-note">Turns a full game into one video per play, from 5 s before the snap to 5 s after
@@ -150,7 +150,7 @@
       <li><span class="n">1</span><label class="filebtn">Choose game video<input type="file" id="fFile" accept="video/*" hidden></label>
         <span class="hint" id="fFileName">No video chosen yet.</span></li>
       <li><span class="n">2</span><button class="sm" id="fKey" type="button" title="Your Anthropic API key, kept in this browser only"></button>
-        <span class="hint">Optional, but do it now if you're going to: with a key, Claude sets aside the clips
+        <span class="hint">Optional. Add a key and Claude automatically sets aside the clips
           that aren't football before anything is cut — about half the leftovers, for around $1.50 a game.</span></li>
       <li><span class="n">3</span><button id="fExp" disabled>Cut into clips</button>
         <span class="hint">Asks which folder to put the clips in, then does the rest.</span></li>
@@ -910,12 +910,8 @@ async function aiPass(opts = {}) {
   if (!key) return;
   const todo = plays.filter(p => !aiSaid.has(snapAt(p)));
   if (!todo.length) return say("Claude has already seen every clip.");
-  // the cut flow has asked already; don't make the owner agree to the same thing twice
-  if (!opts.skipConfirm && !confirm(`Ask Claude about ${todo.length} clip${todo.length === 1 ? "" : "s"}?\n` +
-    `Roughly $${(todo.length * 0.015).toFixed(2)} on your own API account.\n\n` +
-    `Clips it is sure are not football get set aside. Nothing is deleted — ` +
-    `"Keep all" brings everything back.`)) return;
-
+  // No dialog. Pressing a button called "Sharpen with AI", or having saved a key and
+  // pressed Cut, is the decision; asking again on every game is what made this unusable.
   const run = ++aiRun;
   thumbRun++;                                      // the thumbnails must let go of the video
   const back = fv.currentTime, note = fMsg.textContent;
@@ -1146,17 +1142,10 @@ async function exportClips() {
     if (!full) return;
     if (!kept().length) return say("No plays found. Open the review section below, raise Sensitivity, then Cut into clips again.");
   }
-  // Offer the AI pass here rather than leaving it to be found in the picker: this is the
-  // moment it is worth something, because every clip it sets aside is one that does not
-  // have to be cut, written and then watched. Asked once per export, and only about clips
-  // it has not already seen, so a second cut of the same game goes straight through.
-  const unseen = plays.filter(p => !aiSaid.has(snapAt(p))).length;
-  if (unseen && confirm(
-      `Ask Claude which of these ${plays.length} clips are football, before cutting?\n\n` +
-      `It sets aside the ones it is sure aren't — on a whole game that is usually about ` +
-      `half the leftovers, and in testing it dropped no real plays. Roughly ` +
-      `$${(unseen * 0.015).toFixed(2)} on your own API account.\n\n` +
-      `Cancel to cut all ${kept().length} as they are.`)) {
+  // If there is a key, this just runs. Saving a key IS the decision — the owner should not
+  // have to agree to it again on every game, and he has said so plainly more than once.
+  // No key, no pass, no dialog: the cut goes ahead exactly as it did before.
+  if (aiKey() && plays.some(p => !aiSaid.has(snapAt(p)))) {
     exporting = () => { aiRun = 0; }; fExp.textContent = "Stop";   // Cut stops the pass too
     await aiPass({skipConfirm: true});
     exporting = null; fExp.textContent = "Cut into clips";
