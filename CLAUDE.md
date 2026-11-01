@@ -539,11 +539,33 @@ lossless on one game and failed on another failed exactly here. Before shipping 
 on a film with no NFHS overlay, in daylight, from a different camera — the `--clock` /
 picture gap is the test to repeat, and it should stay near zero.
 
-**Shipping it is a real design problem, not a code problem.** The page is a single static
-file on GitHub Pages and an API key cannot live in one. The options are the owner pasting
-his own key into the page (localStorage), a small relay holding the key, or running it off
-the page entirely. It must stay optional: the app works offline with no account today, and
-that should remain true with the feature off.
+**It ships as "Sharpen with AI"** in the picker bar, off until the owner presses it. The
+key is his own, kept in `localStorage` under `filmCutter:aiKey`, and the call goes straight
+from the page to `api.anthropic.com` — **no SDK**. Three headers do it: `x-api-key`,
+`anthropic-version: 2026-10-21` and **`anthropic-dangerous-direct-browser-access: true`**,
+which is the one that makes the browser call legal (it is what the TypeScript SDK's
+`dangerouslyAllowBrowser` sets, and it was verified live before anything was built on it).
+Vendoring the SDK was not needed and would have been a second `vendor/` problem.
+
+The pass seeks the clip's three frames into a 640×360 canvas, sends them as JPEG, and sets
+`p.off` only where the model says *not football* at `AI_CONF` or above. Seeks are serial —
+one video element — while `AI_CONC` (6) requests fly at once, so the film is read once at
+seek speed and the API is never the bottleneck. A second press stops it. Answers are cached
+in `aiSaid` by snap second, so moving the Sensitivity slider only asks about clips that are
+new, and nothing is deleted: "Keep all" brings everything back as always.
+
+Tested in Chrome on the real film, twelve clips: **12 of 12 judgements correct, 4 set aside,
+every one of them junk, no play lost.** The two it correctly called junk at 0.68 and 0.75
+were kept, which is `AI_CONF` doing its job.
+
+**Why there is no "how long is the clip" rule, although the owner suggested one.** He
+guessed plays never run past 45 s, which is nearly right and worth recording properly:
+measured over all 222 judged clips, snaps run **10–47 s** (median 19) and junk **2–78 s**
+(median 22). So the longest real snap is 47 s and a cut at >45 s costs a play (#48). The
+lossless line is **>50 s**, and on top of the AI and the head count it adds **2 clips**
+(#124, #223). That is not worth a rule whose family has already failed a regression once —
+`JOIN` merges a play with whatever ran into it, so long clips often have a real play inside,
+and the >35 s version lost 2 of the old film's 13 hand-timed snaps. Left out deliberately.
 
 **Clips that run into each other are one piece of film.** Real plays sit 25–40 s apart,
 so a clip butting up against the one before is a single stretch of action chopped in

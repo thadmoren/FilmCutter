@@ -140,7 +140,7 @@
 <div class="wrap film">
   <h1>🎬 Film Cutter</h1>
   <div class="sub">Open a full game — get every play, with the dead time cut out.
-    <span class="ver">v2026.10.31.1</span></div>
+    <span class="ver">v2026.10.31.2</span></div>
   <div class="family">Same family as <a href="../FormationDrawer/">🏈 Formation Drawer</a></div>
 
     <p class="film-note">Turns a full game into one video per play, from 5 s before the snap to 5 s after
@@ -161,6 +161,7 @@
       <div class="pickbar">
         <strong id="fPickCount"></strong>
         <span class="hint">Three frames across each play, cycling — a still can't tell a snap from a huddle. Click any you don't want.</span>
+        <button class="sm" id="fAI" type="button" title="Ask Claude which clips are football. Needs your own API key.">Sharpen with AI</button>
         <button class="sm" id="fPickAll" type="button">Keep all</button>
       </div>
       <div id="fPick" class="pick"></div>
@@ -214,6 +215,17 @@ const EDGE = 0.4;                  // a play runs while it is this far up its ow
 const FOOT = 0.12, FOOT_MAX = 8;   // and starts where it first rose this far, up to 8 s earlier
 const JOIN = 0;                    // clips this close together are one stretch of film
 const PLAY_LO = 6, PLAY_HI = 4;    // seconds a bump must last to be a play, across the slider
+// Asking a vision model whether a clip is football is the only thing that reaches the junk
+// inside live play — huddles, the walk-up, milling about between downs. Measured on the
+// 3h19m game against all 222 clips judged by eye: at AI_CONF it drops 46 clips and loses
+// none of the 125 snaps, and together with the head count that is 48 of 97 junk clips off,
+// lossless. Below AI_CONF it starts costing real plays, so the bar stays high. It is off
+// until the owner turns it on, needs his own API key, and the page works without it.
+const AI_MODEL = "claude-opus-5-5";
+const AI_CONF = 0.90;              // only set aside junk the model is this sure of
+const AI_W = 640, AI_H = 360;      // it needs this much picture; 320x180 was never tested
+const AI_SHOTS = [2, 6, 10];       // seconds past the snap — the picker's own three frames
+const AI_CONC = 6;                 // requests in flight at once
 const MEN_FRAC = 0.65;             // a clip showing fewer than this share of the film's
 const MEN_RUN = 3;                 // usual head count, in a stretch of this many in a
 const MEN_MIN = 12;                // row, is set aside — unless the film never shows a
@@ -779,6 +791,137 @@ async function fillThumbs() {
   say(note);
   fv.currentTime = back;
 }
+/* --- asking a vision model which clips are football ---------------------------------
+   Twelve measurements made by hand could not tell a snap from a huddle; showing three
+   frames to Claude does. See CLAUDE.md for the numbers. The key is the owner's own and
+   lives only in his browser — the call goes straight from the page to api.anthropic.com
+   (the dangerous-direct-browser-access header is what makes that legal), so the film
+   never goes anywhere and nothing is uploaded but three small stills per clip. */
+const fAI = document.getElementById("fAI");
+const acv = document.createElement("canvas");
+acv.width = AI_W; acv.height = AI_H;
+const actx = acv.getContext("2d");
+actx.imageSmoothingQuality = "high";
+const aiSaid = new Map();                // play start second -> {play, confidence}
+let aiRun = 0;
+
+const AI_ASK = `You are watching American high-school football film from a single fixed
+camera. It is wide: the players are small.
+
+Three frames from one clip, 4 seconds apart. Does a PLAY FROM SCRIMMAGE happen in them —
+a snap, including kickoffs, punts and field goals?
+
+A play: the teams are lined up facing each other, then that breaks up — players move
+downfield, a carrier is run down, bodies end up on the ground.
+
+NOT plays: a huddle still gathered in the later frames; the teams walking up to the line
+with nothing breaking open; the camera on the sideline, bench, crowd or band; warm-ups,
+halftime, the end of the game; a replay, a sponsor card or a black frame.
+
+Judge from what the PLAYERS do between the frames. A scoreboard may be visible but it is
+sometimes frozen and on other films absent, so do not depend on it.
+
+Reply with raw JSON only, no other text:
+{"play": true or false, "confidence": 0.0 to 1.0}`;
+
+async function aiJudge(key, shots) {
+  const r = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-api-key": key,
+      "anthropic-version": "2026-10-21",
+      "anthropic-dangerous-direct-browser-access": "true",
+    },
+    body: JSON.stringify({
+      model: AI_MODEL,
+      max_tokens: 1000,
+      output_config: {effort: "low"},
+      messages: [{role: "user", content: [
+        ...shots.map(d => ({type: "image",
+          source: {type: "base64", media_type: "image/jpeg", data: d}})),
+        {type: "text", text: AI_ASK},
+      ]}],
+    }),
+  });
+  const j = await r.json();
+  if (!r.ok) throw new Error((j.error && j.error.message) || `HTTP ${r.status}`);
+  if (j.stop_reason === "refusal") throw new Error("the model declined this one");
+  const txt = (j.content || []).filter(b => b.type === "text").map(b => b.text).join("");
+  const m = txt.match(/\{[^{}]*\}/);               // it may wrap the JSON in prose
+  if (!m) throw new Error("could not read the answer");
+  return JSON.parse(m[0]);
+}
+
+async function aiPass() {
+  if (aiRun) { aiRun = 0; return; }                // a second click stops it
+  if (scanning || !fv.duration || !plays.length) return;
+  let key = localStorage.getItem("filmCutter:aiKey") || "";
+  if (!key) {
+    key = (prompt("Paste your Anthropic API key (console.anthropic.com).\n" +
+      "It is kept in this browser only and sent straight to Anthropic.") || "").trim();
+    if (!key) return;
+    try { localStorage.setItem("filmCutter:aiKey", key); } catch (e) {}
+  }
+  const todo = plays.filter(p => !aiSaid.has(snapAt(p)));
+  if (!confirm(`Ask Claude about ${todo.length} clip${todo.length === 1 ? "" : "s"}?\n` +
+    `Roughly $${(todo.length * 0.015).toFixed(2)} on your own API account.\n\n` +
+    `Clips it is sure are not football get set aside. Nothing is deleted — ` +
+    `"Keep all" brings everything back.`)) return;
+
+  const run = ++aiRun;
+  thumbRun++;                                      // the thumbnails must let go of the video
+  const back = fv.currentTime, note = fMsg.textContent;
+  fv.pause();
+  fAI.textContent = "Stop";
+  const seek = t => new Promise(res => { fv.addEventListener("seeked", res, {once: true}); fv.currentTime = t; });
+  let done = 0, bad = 0;
+  const flying = new Set();            // requests in the air; each clears itself on landing
+  try {
+    for (const p of todo) {
+      if (run !== aiRun) break;
+      const shots = [];
+      for (const off of AI_SHOTS) {                // seeks must be one at a time
+        const t = Math.min(snapAt(p) + off, Math.max(snapAt(p), Math.round(p.e)));
+        if (t >= fv.duration) break;
+        await seek(t);
+        if (run !== aiRun) break;
+        actx.drawImage(fv, 0, 0, AI_W, AI_H);
+        shots.push(acv.toDataURL("image/jpeg", 0.5).split(",")[1]);
+      }
+      if (run !== aiRun || shots.length < AI_SHOTS.length) break;
+      const at = snapAt(p);
+      const job = aiJudge(key, shots)
+        .then(a => { aiSaid.set(at, a); })
+        .catch(e => { bad++; if (bad === 1) say("AI: " + e.message); })
+        .then(() => {
+          flying.delete(job);
+          done++;
+          if (run === aiRun) say(`Asking Claude… ${done} of ${todo.length}` + (bad ? ` (${bad} failed)` : ""));
+        });
+      flying.add(job);
+      if (flying.size >= AI_CONC) await Promise.race(flying);
+    }
+    await Promise.all(flying);
+  } finally {
+    fAI.textContent = "Sharpen with AI";
+    if (run === aiRun) aiRun = 0;
+    fv.currentTime = back;
+  }
+  // set aside only what it is sure about: below AI_CONF this starts costing real plays
+  let off = 0;
+  for (const p of plays) {
+    const a = aiSaid.get(snapAt(p));
+    if (a && !a.play && a.confidence >= AI_CONF && !p.off) { p.off = true; off++; }
+  }
+  edited = true; save(); renderPlays(); renderPick(); drawTl(); countPick();
+  say(off ? `Claude set aside ${off} clip${off === 1 ? "" : "s"} that aren't football. ` +
+            `"Keep all" brings them back.`
+          : bad ? note : "Claude didn't find anything it was sure wasn't football.");
+  setTimeout(fillThumbs, 60);
+}
+fAI.addEventListener("click", aiPass);
+
 fPickAll.addEventListener("click", () => {        // undo the lot and start again
   plays.forEach(p => delete p.off);
   edited = true; save(); renderPlays(); renderPick(); drawTl();

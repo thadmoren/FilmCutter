@@ -65,6 +65,17 @@ drops out, and the count on **Cut into clips** follows. Nothing is thrown away: 
 all** puts them back, and the ▶ by a picture plays that bit if you're not sure. The
 pictures take about a minute to come in for a whole game.
 
+**Or press "Sharpen with AI" and let Claude do it.** It looks at three frames of every
+clip and sets aside the ones it is sure aren't football — on a full game that's about half
+the junk gone, and in testing it didn't drop a single real play. Nothing is deleted;
+**Keep all** still brings everything back.
+
+This one is optional and costs a little money, because it needs your own API key from
+[console.anthropic.com](https://console.anthropic.com) — about **$1.50 for a whole game**.
+The key is kept in your browser and sent only to Anthropic. Your film is never uploaded:
+only three small still pictures per clip. Leave the button alone and the app behaves
+exactly as before, with no account and no bill.
+
 **Replays** (the red "replay" badge in the top-right corner, as on NFHS Network film)
 and **black screens** (the sponsor card either side of a replay, or an ad break) are
 skipped, and a play's clip stops where one begins.
