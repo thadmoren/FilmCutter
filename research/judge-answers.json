@@ -2218,5 +2218,1115 @@
   "play": false,
   "confidence": 0.96,
   "why": "Players with helmets off are mingling with fans and family on the field, which looks like the end of the game or a postgame celebration, and no teams are lined up."
+ },
+ "spread5:1": {
+  "play": false,
+  "confidence": 0.95,
+  "why": "Pre-game team run-out through a banner with cheerleaders; no teams lined up and no snap."
+ },
+ "spread5:4": {
+  "play": false,
+  "confidence": 0.85,
+  "why": "Pre-game coin toss at midfield with teams on sidelines, then the team gathers in a huddle near the bench; no lineup or snap."
+ },
+ "spread5:2": {
+  "play": false,
+  "confidence": 0.95,
+  "why": "Pre-game: a team runs onto the field as a group and then lines up along the sideline while the other team stands lined up at the far side, and no snap ever happens."
+ },
+ "spread5:3": {
+  "play": false,
+  "confidence": 0.97,
+  "why": "Both teams stand in lines along their sidelines for pre-game (likely the anthem), the clock reads 00:00 in the 1st, and no formation or snap appears in any frame."
+ },
+ "spread5:5": {
+  "play": false,
+  "confidence": 0.6,
+  "why": "Pre-kickoff: the kicking team is gathered, then spreads out to positions while the white team walks to its spots; no kick or breakdown of the formation is seen."
+ },
+ "spread5:6": {
+  "play": true,
+  "confidence": 0.9,
+  "why": "A kickoff is under way, with the kicking team in yellow running downfield in lanes, then a return and the players converging, before the replay card."
+ },
+ "spread5:11": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "A PAT kick from a lined-up formation near the goal posts breaks up, the score changes from 6 to 7, and players then jog away."
+ },
+ "spread5:9": {
+  "play": true,
+  "confidence": 0.9,
+  "why": "A pass play is underway in frame one (QB throwing, line engaged), players run downfield and celebrate near the end zone before a replay card."
+ },
+ "spread5:12": {
+  "play": false,
+  "confidence": 0.75,
+  "why": "Players are spread out and walking about after a kickoff setup; the white team gathers near the ball and an official stands by, but no snap or kick and no breakup of a line arrangement is seen."
+ },
+ "spread5:8": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "First frame shows players already moving off the line with a ball carrier, second shows downfield pursuit and contact, then players regroup after the play ends with clock running 11:50 to 11:44."
+ },
+ "spread5:7": {
+  "play": true,
+  "confidence": 0.8,
+  "why": "First frame shows action in progress with players spread and a pile forming, second shows players converging after a tackle and the clock running from 11:54 to 11:51, followed by a replay card."
+ },
+ "spread5:10": {
+  "play": true,
+  "confidence": 0.8,
+  "why": "In the first frame players are clustered in a pile near the goal line, and the clock runs from 10:59 to 10:57 while the score changes to 6-0, indicating a scoring play followed by players drifting away."
+ },
+ "spread5:15": {
+  "play": true,
+  "confidence": 0.8,
+  "why": "The first frame shows action in progress, with linemen engaged and players running downfield; the second shows players clustered after the whistle, and the third is a replay sponsor card."
+ },
+ "spread5:18": {
+  "play": true,
+  "confidence": 0.8,
+  "why": "Players are running downfield in open play in frame 1 and converge into a tackle pile in frames 2-3 with the clock running, then a replay card follows."
+ },
+ "spread5:13": {
+  "play": true,
+  "confidence": 0.93,
+  "why": "A kickoff: the kicking team is lined up and approaching the ball, then players run downfield and converge on the returner in a pile, before a replay sponsor card."
+ },
+ "spread5:17": {
+  "play": true,
+  "confidence": 0.8,
+  "why": "First frame shows linemen engaged after a snap with players moving downfield, then players disperse and the sideline celebrates before a replay card."
+ },
+ "spread5:14": {
+  "play": false,
+  "confidence": 0.93,
+  "why": "An injury stoppage: trainers are kneeling over a downed player while officials stand by and both teams wait near their sidelines, and no lineup or snap occurs in any frame."
+ },
+ "spread5:16": {
+  "play": true,
+  "confidence": 0.72,
+  "why": "The first frame shows action already under way, with players spread downfield and a ball carrier being tackled near the 30. The second shows players walking back after the whistle, and the clip ends on a replay sponsor card."
+ },
+ "spread5:20": {
+  "play": true,
+  "confidence": 0.75,
+  "why": "Players are spread out running downfield in the first frames with a player on the ground and the clock moving from 8:24 to 8:20, then a replay sponsor card follows."
+ },
+ "spread5:22": {
+  "play": false,
+  "confidence": 0.8,
+  "why": "The red team stays huddled at left and the white team gathers loosely while an official stands by; no line-up or snap develops across the frames."
+ },
+ "spread5:23": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "First frame shows teams at the line just after the snap with linemen engaged, then players spread downfield and the clock runs from 7:58 to 7:53 before the play ends and a replay sponsor card appears."
+ },
+ "spread5:25": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "Players are already engaged and moving downfield in the first frame, with the action spreading toward the end zone and the camera panning to follow it, consistent with a live pass or run play."
+ },
+ "spread5:21": {
+  "play": true,
+  "confidence": 0.68,
+  "why": "The first frame shows action already in progress near the far sideline, with defenders pursuing as the clock runs from 8:17 to 8:14; players then drift and a replay card follows."
+ },
+ "spread5:24": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "Players are already breaking downfield from a line, with the clock running from 1:49 to 1:44 and a player on the ground downfield, before a replay sponsor card appears."
+ },
+ "spread5:26": {
+  "play": true,
+  "confidence": 0.6,
+  "why": "Players are in formation at the line with the offense in motion appearing to snap, though this is a single replay-labeled frame."
+ },
+ "spread5:27": {
+  "play": true,
+  "confidence": 0.8,
+  "why": "First frame shows the line engaged and players moving post-snap with the clock at 7:01, and the later frames show the clock at 6:59 with players milling about after the play."
+ },
+ "spread5:29": {
+  "play": false,
+  "confidence": 0.68,
+  "why": "Players gather with a coach near the sideline during a break, then walk out and line up loosely, but no snap or breakup of a formation is visible."
+ },
+ "spread5:28": {
+  "play": false,
+  "confidence": 0.85,
+  "why": "Teams drift to their sidelines and gather with coaches (timeout), staying clustered through the later frames with no lineup or snap."
+ },
+ "spread5:30": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "Players are spread downfield in action with the camera panning toward the end zone, the sideline then celebrates, and a replay card follows, which points to a live play that broke open."
+ },
+ "spread5:31": {
+  "play": false,
+  "confidence": 0.6,
+  "why": "Players are jogging and drifting near the goal line after an apparent score, then the kicking team is spread out waiting at midfield; no lined-up formation breaks into a snap or kick."
+ },
+ "spread5:33": {
+  "play": true,
+  "confidence": 0.93,
+  "why": "Teams lined up at scrimmage in frame 1, then the formation breaks with players downfield and bodies on the ground in frame 2, followed by regrouping."
+ },
+ "spread5:34": {
+  "play": true,
+  "confidence": 0.72,
+  "why": "First frame shows players in action with the formation broken and a ball carrier being chased near the sideline, then players regroup and a replay card follows."
+ },
+ "spread5:32": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "Players are running downfield in open play with the clock running, ending in a pile near the sideline, so a live play (likely a kickoff or return) is underway."
+ },
+ "spread5:35": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "First frame shows action in progress with players converging and a pile at the line, clock running 5:30 to 5:26, then players untangle and drift apart afterward."
+ },
+ "spread5:36": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "First frame shows action already broken open with players moving downfield, second shows players running and one on the ground, then players regroup after the whistle while the clock runs from 4:58 to 4:51."
+ },
+ "spread5:37": {
+  "play": true,
+  "confidence": 0.9,
+  "why": "Teams lined up facing each other in frame 1, then in frame 2 the line breaks with players piled on the ground near midfield, followed by regrouping."
+ },
+ "spread5:41": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "First frame shows the teams engaged at the line just after the snap, then players spread out with bodies on the ground, followed by regrouping and a replay card."
+ },
+ "spread5:40": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "The first frame shows a play in progress with linemen engaged and a ball carrier running, the second shows a pile after the tackle with the official signaling, and the clip then cuts to a replay card."
+ },
+ "spread5:38": {
+  "play": true,
+  "confidence": 0.8,
+  "why": "In the first frame the lines are engaged in a scrum with players in motion just after a snap, then everyone sorts out and huddles up while the clock runs on."
+ },
+ "spread5:42": {
+  "play": true,
+  "confidence": 0.95,
+  "why": "Teams lined up at the line in frame 1, then the formation breaks with players engaged and on the ground by frame 3, before they regroup afterward."
+ },
+ "spread5:39": {
+  "play": true,
+  "confidence": 0.9,
+  "why": "Teams lined up at scrimmage in frame 1, then the lines collapse into a scrum with players moving and the play ends with teams regrouping."
+ },
+ "spread5:43": {
+  "play": true,
+  "confidence": 0.93,
+  "why": "Teams are lined up at the line of scrimmage in the first frame, then the formation breaks with a pass rush and players going to the ground before the teams regroup."
+ },
+ "spread5:45": {
+  "play": false,
+  "confidence": 0.85,
+  "why": "Red team stays gathered near its sideline with a coach while the other team stands by its sideline and officials stand around; no lineup or snap occurs, which looks like a timeout."
+ },
+ "spread5:49": {
+  "play": true,
+  "confidence": 0.75,
+  "why": "First frame shows players spread downfield mid-play with defenders pursuing, second shows players converging near the sideline after the action, followed by a replay sponsor card."
+ },
+ "spread5:47": {
+  "play": true,
+  "confidence": 0.8,
+  "why": "First frame shows the teams lined up at the line with the snap underway, clock running 11:59 to 11:57, then the line breaks up and players disperse."
+ },
+ "spread5:46": {
+  "play": false,
+  "confidence": 0.68,
+  "why": "The frames show a sideline/timeout huddle and then players jogging back onto the field, ending with the white team huddled and the red team standing back with the ball on the ground — no snap occurs."
+ },
+ "spread5:44": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "The teams line up at the line of scrimmage while the clock runs, then the formation breaks up and players are scattered downfield with one player down on the ground before they regroup."
+ },
+ "spread5:48": {
+  "play": true,
+  "confidence": 0.93,
+  "why": "Teams lined up at scrimmage near midfield, then the formation broke with players running downfield and the clock ran from 11:57 to 11:49 before the teams regrouped."
+ },
+ "spread5:50": {
+  "play": false,
+  "confidence": 0.88,
+  "why": "An injured player is being attended by trainers while the other players stand around and drift to the sideline; no lineup or snap occurs."
+ },
+ "spread5:52": {
+  "play": true,
+  "confidence": 0.8,
+  "why": "Players are spread out running downfield mid-play as the clock ticks from 11:23 to 11:20, then the clip cuts to a replay sponsor card, suggesting a live play just happened."
+ },
+ "spread5:53": {
+  "play": true,
+  "confidence": 0.8,
+  "why": "Players are spread out and running downfield mid-play with the clock ticking, ending in a tackle near the sideline before a replay card appears."
+ },
+ "spread5:55": {
+  "play": true,
+  "confidence": 0.8,
+  "why": "Players are scattered and moving downfield with a pile forming, the clock runs from 11:12 to 11:08, and the clip ends on a replay card, which fits a play just completed."
+ },
+ "spread5:51": {
+  "play": false,
+  "confidence": 0.75,
+  "why": "Officials and coaches stand around while the red team gathers at its sideline and the white team spreads out downfield; players are walking onto the field, but they never line up facing each other and no snap or kick happens."
+ },
+ "spread5:56": {
+  "play": true,
+  "confidence": 0.8,
+  "why": "Clock runs 10:32 to 10:18 while the line play breaks up, with players moving across the field and a pile forming, and then a replay sponsor card follows."
+ },
+ "spread5:57": {
+  "play": true,
+  "confidence": 0.8,
+  "why": "First frame shows players spread and running downfield in live action with the clock moving from 10:14 to 10:10, then players gather around a tackle point and officials."
+ },
+ "spread5:58": {
+  "play": false,
+  "confidence": 0.8,
+  "why": "White team stands loosely and the dark team stays huddled in both frames, with officials walking about and no line-up or snap breaking open."
+ },
+ "spread5:61": {
+  "play": false,
+  "confidence": 0.85,
+  "why": "The red team walks to its own sideline and gathers around its coaches while the other team stays by its far sideline, and no lineup or snap ever happens, which looks like a timeout."
+ },
+ "spread5:59": {
+  "play": true,
+  "confidence": 0.93,
+  "why": "Teams lined up at scrimmage, then the formation breaks with players running downfield and the clock running, followed by a replay card."
+ },
+ "spread5:60": {
+  "play": true,
+  "confidence": 0.7,
+  "why": "First frame shows action in progress with players spread and running downfield and a pile near the logo, then teams regroup and huddle afterward."
+ },
+ "spread5:62": {
+  "play": true,
+  "confidence": 0.8,
+  "why": "After the red team breaks the huddle and walks to the line, frame 4 shows the two teams engaged at the line with linemen pushing into each other and the defensive backs backpedalling, so the snap has happened, and a replay card follows."
+ },
+ "spread5:63": {
+  "play": true,
+  "confidence": 0.93,
+  "why": "Teams lined up at the 50 facing each other, then the formation broke with players running downfield and the camera panning to follow the action, clock running 9:24 to 9:16."
+ },
+ "spread5:65": {
+  "play": false,
+  "confidence": 0.88,
+  "why": "Red team gathered at their sideline with coaches and white team huddled far side throughout, officials standing midfield — a timeout, no lineup or snap."
+ },
+ "spread5:66": {
+  "play": false,
+  "confidence": 0.7,
+  "why": "Players walk up and settle into a lined-up formation by the last frame, but no snap or breakup of the arrangement is seen."
+ },
+ "spread5:67": {
+  "play": true,
+  "confidence": 0.8,
+  "why": "The first frame shows players scattered and running downfield in live action, and the later frames show the teams regrouping after the play."
+ },
+ "spread5:69": {
+  "play": true,
+  "confidence": 0.8,
+  "why": "First frame shows players in action with a pile and tackle near the line, clock running 1:55 to 1:51, then players stop and drift apart as the clock stops at 1:49."
+ },
+ "spread5:68": {
+  "play": true,
+  "confidence": 0.8,
+  "why": "First frame shows players spread and moving in action near the line, then by 8:26 the play is over and players regroup; down/distance changes after (3rd to new set), indicating a snap occurred."
+ },
+ "spread5:71": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "Players run downfield in a spread-out pursuit with the clock running from 1:39 to 1:31, then the play ends and the teams gather by the sideline in what looks like a timeout."
+ },
+ "spread5:73": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "The teams are lined up at the line near the goal, then they collapse into a pile with players on the ground, and afterward they regroup and huddle."
+ },
+ "spread5:72": {
+  "play": true,
+  "confidence": 0.8,
+  "why": "In the first frames, players are spread out and running downfield, with a pile forming and a player down on the near side, which is live action from a play, and then a replay sponsor card follows."
+ },
+ "spread5:74": {
+  "play": true,
+  "confidence": 0.8,
+  "why": "First frame shows players engaged in action near the goal line after a snap, then players spread out with the sideline celebrating and the clock running from 6:03 to 6:00, followed by a replay sponsor card, indicating a scoring play."
+ },
+ "spread5:75": {
+  "play": false,
+  "confidence": 0.7,
+  "why": "Players stand loosely around the goal-line area mingling across frames with no lined-up formation breaking into action, nobody tackled or piled up."
+ },
+ "spread5:76": {
+  "play": false,
+  "confidence": 0.7,
+  "why": "After an apparent score, players celebrate and walk toward the sideline, then the kicking team spreads out for a kickoff setup, but no kick or breakup is seen."
+ },
+ "spread5:77": {
+  "play": false,
+  "confidence": 0.8,
+  "why": "Players stand scattered and loosely gathered across all frames with an official signaling, no lineup or snap breaking open."
+ },
+ "spread5:78": {
+  "play": false,
+  "confidence": 0.6,
+  "why": "Dark-jersey players stand scattered loosely while white players walk onto the field, which looks like a substitution or kickoff setup with no snap or collision."
+ },
+ "spread5:79": {
+  "play": true,
+  "confidence": 0.9,
+  "why": "Players spread across field running downfield like a kickoff/return, then blocking and a tackle pile near midfield with officials signaling, followed by a replay card."
+ },
+ "spread5:80": {
+  "play": true,
+  "confidence": 0.95,
+  "why": "Teams lined up at scrimmage in frame 1, then the line surges forward and by frame 3 players are on the ground after a tackle, followed by regrouping."
+ },
+ "spread5:82": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "Teams lined up at scrimmage in frame 1, then the line breaks with players engaged and moving, clock running 4:34 to 4:27, before regrouping into a huddle."
+ },
+ "spread5:81": {
+  "play": true,
+  "confidence": 0.68,
+  "why": "Players are scattered mid-action in the first frame, with defenders pursuing and running downfield in the second, and the clock is moving, which points to a live play that then winds down into players regrouping."
+ },
+ "spread5:83": {
+  "play": true,
+  "confidence": 0.8,
+  "why": "First frames show linemen engaged and players moving with clock running from 4:02 to 3:56, then players regroup after the play ends."
+ },
+ "spread5:84": {
+  "play": false,
+  "confidence": 0.75,
+  "why": "The white team stays huddled on the left while the dark team stands loosely around midfield, with no lineup or snap breaking open across the frames."
+ },
+ "spread5:85": {
+  "play": false,
+  "confidence": 0.7,
+  "why": "Players stand around loosely in two clusters across all frames with no lineup breaking into action; the clock stays at 3:42."
+ },
+ "spread5:86": {
+  "play": false,
+  "confidence": 0.8,
+  "why": "White team stays in a huddle while dark team stands loosely spread on defense; no lineup or snap breaks open across the frames."
+ },
+ "spread5:89": {
+  "play": false,
+  "confidence": 0.75,
+  "why": "The away team stays in a huddle on the left and the defense stands loosely around the line throughout, with nothing breaking open and the clock unchanged."
+ },
+ "spread5:87": {
+  "play": true,
+  "confidence": 0.75,
+  "why": "First frame shows players spread in motion mid-play with defenders pursuing, the clock running from 3:27 to 3:13, and later frames show players regrouping after the play ends."
+ },
+ "spread5:88": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "Players are running downfield in open play with a ball carrier pursued, ending in a pile with an official signaling, then a replay card, so a snap occurred."
+ },
+ "spread5:90": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "Teams lined up at the line in frame 1, then in frame 2 the lines collapse into a scrum with players moving, and later frames show players dispersing and huddling after the play."
+ },
+ "spread5:91": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "Players break from the line and run downfield with a ball carrier pursued, clock running from 1:53 to 1:46, followed by a replay card."
+ },
+ "spread5:92": {
+  "play": true,
+  "confidence": 0.8,
+  "why": "First frame shows a play in progress with linemen engaged and a ball carrier moving near the goal line, then players disperse and regroup in later frames."
+ },
+ "spread5:93": {
+  "play": true,
+  "confidence": 0.75,
+  "why": "First frame shows players engaged in blocking/tackling action mid-play, then they regroup and huddle afterward while the game clock runs from 1:15 to 1:05."
+ },
+ "spread5:98": {
+  "play": false,
+  "confidence": 0.68,
+  "why": "The teams set up for a kickoff, with the kicking team lining up and crouching, but by the last frame the kick has not happened and no one has run downfield."
+ },
+ "spread5:94": {
+  "play": false,
+  "confidence": 0.9,
+  "why": "Red team stays huddled near the sideline with coaches while officials stand and confer in all frames; no lineup or snap occurs, consistent with a timeout."
+ },
+ "spread5:95": {
+  "play": false,
+  "confidence": 0.75,
+  "why": "Dark team clusters near the goal line while the white team walks toward a huddle; teams never line up facing each other and nothing breaks open, and the clock stays at 1:10 throughout."
+ },
+ "spread5:99": {
+  "play": true,
+  "confidence": 0.9,
+  "why": "A kickoff is under way, with the kicking team in white running downfield in a line; players then converge on the ball carrier and a pile forms before the replay card."
+ },
+ "spread5:101": {
+  "play": false,
+  "confidence": 0.88,
+  "why": "Clock at 0:00; teams walk off toward sidelines, officials gather, no lineup or snap occurs — end of half/game."
+ },
+ "spread5:100": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "Teams line up facing each other, then the formation breaks with players converging and a tackle pile on the ground as the clock runs from 0:55 to 0:48."
+ },
+ "spread5:102": {
+  "play": false,
+  "confidence": 0.97,
+  "why": "Only cheerleaders carrying and folding flags on an empty field; no teams lined up and no snap."
+ },
+ "spread5:105": {
+  "play": false,
+  "confidence": 0.97,
+  "why": "Cheerleaders/dance team standing on the field during halftime; no teams lined up and no snap."
+ },
+ "spread5:103": {
+  "play": false,
+  "confidence": 0.97,
+  "why": "Cheerleaders are holding a run-through banner on the field before the game, and no teams are lined up and no snap happens."
+ },
+ "spread5:104": {
+  "play": false,
+  "confidence": 0.97,
+  "why": "Cheerleaders/dance team standing on midfield logo during halftime-style performance; no football teams lined up or snap."
+ },
+ "spread5:106": {
+  "play": false,
+  "confidence": 0.95,
+  "why": "Cheerleaders hold a run-through banner on the field and no players line up or snap in any frame."
+ },
+ "spread5:107": {
+  "play": false,
+  "confidence": 0.95,
+  "why": "Cheerleaders hold a run-through banner on the field with no teams lined up and no snap visible in any frame."
+ },
+ "spread5:108": {
+  "play": false,
+  "confidence": 0.93,
+  "why": "Cheerleaders hold a run-through banner on the field and no teams line up or snap in any frame."
+ },
+ "spread5:110": {
+  "play": false,
+  "confidence": 0.95,
+  "why": "The frames show cheerleaders and a large Mount Si banner on the field with no teams lined up and no snap."
+ },
+ "spread5:112": {
+  "play": false,
+  "confidence": 0.95,
+  "why": "Cheerleaders and people stand by a Mount Si banner on the field throughout; no teams lined up and no snap."
+ },
+ "spread5:111": {
+  "play": false,
+  "confidence": 0.97,
+  "why": "Cheerleaders and others are holding a Mount Si run-through banner on the field across all five frames, with no teams lined up and no snap."
+ },
+ "spread5:113": {
+  "play": false,
+  "confidence": 0.95,
+  "why": "Cheerleaders and people stand around a run-through banner on the field; no teams lined up and no snap occurs."
+ },
+ "spread5:109": {
+  "play": false,
+  "confidence": 0.95,
+  "why": "Cheerleaders hold up a Mount Si run-through banner on the field throughout, and no teams line up or snap the ball."
+ },
+ "spread5:115": {
+  "play": false,
+  "confidence": 0.97,
+  "why": "Every frame shows spectators, cheerleaders and a Mount Si banner standing on the field during a break, with no teams lined up and no snap."
+ },
+ "spread5:114": {
+  "play": false,
+  "confidence": 0.95,
+  "why": "Cheerleaders and people stand around a run-through banner on the field; no players line up and no snap occurs."
+ },
+ "spread5:116": {
+  "play": false,
+  "confidence": 0.97,
+  "why": "A ceremony with a run-through banner, cheerleaders, and a crowd of people standing on the field, with no teams lined up and no snap."
+ },
+ "spread5:118": {
+  "play": false,
+  "confidence": 0.97,
+  "why": "Pre-game ceremony with a run-through banner, cheerleaders and families standing on the field; no teams lined up and no snap."
+ },
+ "spread5:117": {
+  "play": false,
+  "confidence": 0.97,
+  "why": "A pre-game run-through banner is held up with cheerleaders and a crowd on the field, and no teams are lined up or snapping the ball."
+ },
+ "spread5:119": {
+  "play": false,
+  "confidence": 0.97,
+  "why": "A crowd and cheerleaders stand around a run-through banner on the field (halftime or pre-game), and no teams ever line up or snap."
+ },
+ "spread5:120": {
+  "play": false,
+  "confidence": 0.97,
+  "why": "Pre-game run-through banner with crowd and cheerleaders standing on the field; no teams lined up and no snap."
+ },
+ "spread5:121": {
+  "play": false,
+  "confidence": 0.97,
+  "why": "A crowd of people and cheerleaders stand around a run-through banner on the field in a ceremony, with no teams lined up and no snap."
+ },
+ "spread5:122": {
+  "play": false,
+  "confidence": 0.95,
+  "why": "Pre-game team entrance: players run through a banner with cheerleaders and crowd on the field, and no teams line up or snap."
+ },
+ "spread5:126": {
+  "play": false,
+  "confidence": 0.7,
+  "why": "Players huddle by the sideline, then a few walk onto the field and spread out as if setting up for a kick, but no snap or kick is seen breaking open."
+ },
+ "spread5:124": {
+  "play": false,
+  "confidence": 0.85,
+  "why": "Players are lined up in rows doing pre-game warm-up drills near the end zone, with no teams facing off at a line of scrimmage and nothing breaking into a play."
+ },
+ "spread5:125": {
+  "play": false,
+  "confidence": 0.8,
+  "why": "Players walk in loose lines near the end zone while the clock runs out to 0:00, then gather at the sideline with no snap or tackle, which looks like the end of a half or game."
+ },
+ "spread5:123": {
+  "play": false,
+  "confidence": 0.85,
+  "why": "Players are running and lining up along the end zone sideline in a pre-game or halftime-style ceremony, and no teams are ever set at a line of scrimmage."
+ },
+ "spread5:127": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "A kickoff: the kicking team runs downfield in a line across the field, then players converge on the return before a replay card appears."
+ },
+ "spread5:128": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "Clock runs from 12:00 to 11:44 as players run downfield in a kickoff/return-like action, followed by a replay sponsor card."
+ },
+ "spread5:130": {
+  "play": false,
+  "confidence": 0.68,
+  "why": "Players mill about and regroup near the goal line area with a pile breaking up on the right early, then teams gather and walk toward the line without a visible snap."
+ },
+ "spread5:133": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "Players run downfield in a return-like action, then converge into a pile with a player down before cutting to a replay sponsor card."
+ },
+ "spread5:132": {
+  "play": false,
+  "confidence": 0.68,
+  "why": "Players are spread out walking into position and the white team is setting up in the final frame, which looks like the setup for a kickoff, but no snap or kick is visible yet."
+ },
+ "spread5:134": {
+  "play": true,
+  "confidence": 0.8,
+  "why": "First frame shows live action with a ball carrier being tackled amid a pile, clock running from 11:30 to 11:26, then players disperse and a replay card follows."
+ },
+ "spread5:136": {
+  "play": false,
+  "confidence": 0.6,
+  "why": "Teams walk up and set in formation at the line by the last frame, but no snap or breakup of the formation is visible."
+ },
+ "spread5:138": {
+  "play": true,
+  "confidence": 0.93,
+  "why": "Teams lined up at the line of scrimmage in frame 1, then the formation broke with players running downfield and a ball carrier pursued toward the sideline, before a replay card."
+ },
+ "spread5:137": {
+  "play": true,
+  "confidence": 0.8,
+  "why": "Frame 1 shows a live play underway with players running downfield and a defender diving at the ball carrier, then the action ends near the sideline before a replay sponsor card."
+ },
+ "spread5:139": {
+  "play": false,
+  "confidence": 0.8,
+  "why": "Defense stands spread out while the white team stays huddled near the 35 in all three frames; no snap or breakup occurs."
+ },
+ "spread5:141": {
+  "play": true,
+  "confidence": 0.95,
+  "why": "Teams are lined up at scrimmage in frame 1, then the line breaks, players run downfield and a pile forms near the ball carrier before a replay card appears."
+ },
+ "spread5:140": {
+  "play": false,
+  "confidence": 0.8,
+  "why": "White team gathers into a huddle and stays huddled while the dark defense stands waiting; no snap or breakup occurs."
+ },
+ "spread5:142": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "Players break from the line and run downfield with the camera panning to the end zone as a runner breaks long, the clock running from 9:59 to 9:51, before a replay sponsor card."
+ },
+ "spread5:143": {
+  "play": false,
+  "confidence": 0.7,
+  "why": "Players stand and mill loosely near the 10-yard line across all frames with no lineup breaking into action; play clock stays at 25 and game clock frozen."
+ },
+ "spread5:144": {
+  "play": false,
+  "confidence": 0.7,
+  "why": "Players are walking around loosely after a play with no lined-up formation breaking; the camera pans as players spread out, and the clock stays frozen at 9:51."
+ },
+ "spread5:149": {
+  "play": true,
+  "confidence": 0.93,
+  "why": "Teams are lined up at scrimmage in frame 1, then players break downfield and an official signals in frame 3, before a replay sponsor card."
+ },
+ "spread5:148": {
+  "play": false,
+  "confidence": 0.7,
+  "why": "Players are scattered after a play and then the dark team gathers into a huddle while the white team stands about; no lineup forms and breaks within the frames."
+ },
+ "spread5:146": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "A kickoff: the kicking team in white runs downfield in a line, then players spread out, someone ends up on the ground, and a replay card follows."
+ },
+ "spread5:152": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "Kickoff coverage: white team running downfield in a line toward black returners, then players converge on the ball carrier and the play ends with players standing around."
+ },
+ "spread5:151": {
+  "play": false,
+  "confidence": 0.6,
+  "why": "White team is lining up for a kickoff with the ball teed and the receiving team spread deep, but the kick never happens in these frames; players are still standing in their positions at the end."
+ },
+ "spread5:153": {
+  "play": false,
+  "confidence": 0.6,
+  "why": "Players stay in roughly the same loose arrangement near the line across all frames while the play clock runs down, with no snap or breakup visible."
+ },
+ "spread5:155": {
+  "play": true,
+  "confidence": 0.68,
+  "why": "The first frame shows a play already in progress, with players running downfield and contact near the ball; the later frames show players milling about after the whistle, followed by a replay sponsor card."
+ },
+ "spread5:154": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "First frame shows players already in action near the line with a ball carrier moving and defenders converging, second shows a player down with bodies clustered after a tackle, then a replay sponsor card."
+ },
+ "spread5:156": {
+  "play": true,
+  "confidence": 0.8,
+  "why": "The first frame shows a play already broken open with players spread downfield and a ball carrier running near the sideline, after which players come to a stop by the bench and a replay sponsor card follows."
+ },
+ "spread5:158": {
+  "play": true,
+  "confidence": 0.6,
+  "why": "First frame shows action in the end zone with a player down near the right side, and the score changes from 12 to 18, so a touchdown play ended here; the later frames are players walking around and celebrating."
+ },
+ "spread5:157": {
+  "play": true,
+  "confidence": 0.9,
+  "why": "The players break from the line and run downfield as the camera pans to follow a long run that ends with a tackle near the goal line, followed by a replay sponsor card."
+ },
+ "spread5:161": {
+  "play": true,
+  "confidence": 0.8,
+  "why": "The first frame shows players already in action, with linemen engaged and a ball carrier being pursued; afterwards they mill about and regroup."
+ },
+ "spread5:159": {
+  "play": true,
+  "confidence": 0.7,
+  "why": "Early frames show players near the goal line spread out and running after a down (likely a scoring play/PAT), then the camera cuts to the kicking team lined up for a kickoff."
+ },
+ "spread5:160": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "Players are running downfield in open play, the clock moves from 7:8 to 7:1, a player ends up on the ground, and the clip ends on a replay card, so live action happened."
+ },
+ "spread5:164": {
+  "play": true,
+  "confidence": 0.93,
+  "why": "Teams are lined up at the line of scrimmage in frame 1, the formation breaks in frame 2, and a ball carrier is tackled near the sideline in frame 3 before the players regroup."
+ },
+ "spread5:162": {
+  "play": true,
+  "confidence": 0.9,
+  "why": "The first frame shows a play in progress with the lines broken and players pursuing, the second shows bodies on the ground after a tackle, and the later frames show the teams regrouping and huddling."
+ },
+ "spread5:166": {
+  "play": true,
+  "confidence": 0.8,
+  "why": "First frame shows a play in progress with players breaking from the line and a ball carrier being pursued, followed by players regrouping and huddling, and the down changes."
+ },
+ "spread5:163": {
+  "play": true,
+  "confidence": 0.93,
+  "why": "Teams are lined up at the line of scrimmage in frame 1, then the formation breaks with players running downfield and a player on the ground before regrouping afterward."
+ },
+ "spread5:165": {
+  "play": true,
+  "confidence": 0.8,
+  "why": "First frame shows linemen engaged at the line with a ball carrier moving after the snap, then players disperse and regroup afterward as the clock runs."
+ },
+ "spread5:167": {
+  "play": false,
+  "confidence": 0.7,
+  "why": "Players are already scattered after action in the first frame, then drift and regroup into huddles with the clock frozen and distance changing from 10 to 15, consistent with a penalty being marked off rather than a new snap."
+ },
+ "spread5:169": {
+  "play": true,
+  "confidence": 0.88,
+  "why": "First frame shows teams lined up at the line with linemen engaged, then players scatter downfield and a pile forms near the ball before teams regroup and huddle."
+ },
+ "spread5:170": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "First frame shows a play in progress with the line engaged and a ball carrier moving, then players run downfield toward the end zone with a player on the ground, followed by a replay card."
+ },
+ "spread5:168": {
+  "play": false,
+  "confidence": 0.8,
+  "why": "Players walk off from a dead ball and both teams then gather in timeout-style huddles near their sidelines, with a coach in the red team's group, and no lineup or snap is ever seen."
+ },
+ "spread5:171": {
+  "play": false,
+  "confidence": 0.7,
+  "why": "Players are walking back after a score while the kickoff team spreads out to set up, with no snap or kick visible and the scoreboard clock unchanged throughout."
+ },
+ "spread5:172": {
+  "play": false,
+  "confidence": 0.6,
+  "why": "The white team is lining up and setting for what looks like a kickoff, with the kicker standing over the ball, but no kick or downfield movement happens in any frame."
+ },
+ "spread5:173": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "Players are already in motion downfield in the opening frame, then a run-down and a pursuit toward the sideline follow, with a replay card at the end."
+ },
+ "spread5:174": {
+  "play": true,
+  "confidence": 0.72,
+  "why": "The first frame shows players spread and running downfield mid-play with a ball carrier pursued, the second shows them gathered after the whistle, and the clip ends on a replay card."
+ },
+ "spread5:176": {
+  "play": true,
+  "confidence": 0.8,
+  "why": "The first frame shows live action with players spread out running and a pile forming near the ball, then players regroup and a replay card follows, consistent with a snap having occurred."
+ },
+ "spread5:175": {
+  "play": true,
+  "confidence": 0.9,
+  "why": "First frame shows a play in progress with players running downfield, second shows a ball carrier tackled to the ground, then teams regroup."
+ },
+ "spread5:177": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "Players are in action in the first frame (passing play developing), then spread downfield with the clock running 0:50 to 0:43, before a replay sponsor card."
+ },
+ "spread5:181": {
+  "play": false,
+  "confidence": 0.85,
+  "why": "Players walk off after a whistle, then both teams huddle near their sidelines with a coach (timeout/quarter break), with no lineup or snap seen."
+ },
+ "spread5:178": {
+  "play": false,
+  "confidence": 0.85,
+  "why": "Dark-jersey team stays in a loose huddle and then spreads out loosely while the white team kneels in a group by the officials; the two teams never line up facing each other and nothing breaks open, which looks like a timeout or injury stoppage."
+ },
+ "spread5:182": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "First frame shows a play in progress with players running and the clock dropping from 11:58 to 11:54, then players pursue the carrier and regroup."
+ },
+ "spread5:180": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "First frames show players in motion downfield with a player on the ground being tackled, then players regroup and huddle, and the down changes from 1st to 2nd."
+ },
+ "spread5:183": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "The first frame shows the teams engaged at the line just after the snap, and the next frames show players running downfield with the formation broken before they regroup."
+ },
+ "spread5:184": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "First frame shows linemen engaged at the line with players moving, the clock running from 10:49 to 10:45, then players disperse and an official signals the play over."
+ },
+ "spread5:186": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "First frame shows a play in progress with players breaking from the line, then a pile forms around a tackled ball carrier before players disperse."
+ },
+ "spread5:185": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "The teams are lined up at the line, then a mass of bodies drives forward and players end up on the ground in a pile before the offense huddles again; the clock also moves from 10:07 to 9:58."
+ },
+ "spread5:187": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "Players are spread in action, running across the field with the clock ticking from 9:36 to 9:32, then players regroup and a replay card follows, indicating a live play occurred."
+ },
+ "spread5:189": {
+  "play": false,
+  "confidence": 0.85,
+  "why": "Teams walk toward their own sidelines and gather with coaches across all frames, consistent with a timeout; no lineup or snap occurs."
+ },
+ "spread5:188": {
+  "play": true,
+  "confidence": 0.93,
+  "why": "Teams lined up at scrimmage in frame 1, then the formation breaks with players running downfield and bodies on the ground, before a replay sponsor card."
+ },
+ "spread5:190": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "Teams lined up at scrimmage in frame 1, then players run downfield and the formation breaks up, with the clock running from 8:40 to 8:14, before a replay sponsor card."
+ },
+ "spread5:191": {
+  "play": true,
+  "confidence": 0.75,
+  "why": "First frame shows players spread downfield mid-action with a ball carrier and bodies converging, then players regroup, followed by a replay sponsor card indicating a play just occurred."
+ },
+ "spread5:194": {
+  "play": true,
+  "confidence": 0.9,
+  "why": "The first frame shows the lines engaged right after the snap; in the later frames players spread downfield and a player is on the ground as the play ends."
+ },
+ "spread5:192": {
+  "play": true,
+  "confidence": 0.8,
+  "why": "First frame shows players spread and running with a ball carrier near midfield, second shows bodies on the ground in a pile with the clock ticking down, then a replay sponsor card."
+ },
+ "spread5:193": {
+  "play": true,
+  "confidence": 0.8,
+  "why": "First frame shows a play in progress with players running downfield and the clock moving from 7:12 to 6:58, then teams regroup and huddle afterward."
+ },
+ "spread5:195": {
+  "play": true,
+  "confidence": 0.8,
+  "why": "First frame shows the line breaking up mid-play with players scattering and the ball being carried, the clock runs from 6:24 to 6:23, and the teams then regroup."
+ },
+ "spread5:196": {
+  "play": true,
+  "confidence": 0.8,
+  "why": "The first frame shows action in progress with players scattered and engaged after a snap, then the play ends and teams regroup into huddles while the clock runs from 6:28 to 6:23."
+ },
+ "spread5:197": {
+  "play": true,
+  "confidence": 0.72,
+  "why": "First frame shows players already in action with the formation broken and moving, clock running 5:49 to 5:43, then players regroup afterward."
+ },
+ "spread5:199": {
+  "play": false,
+  "confidence": 0.8,
+  "why": "White team stays in a huddle while dark team stands loosely spread; no lineup breaks or snap across the frames."
+ },
+ "spread5:198": {
+  "play": false,
+  "confidence": 0.7,
+  "why": "White team stays in a huddle while dark team stands spread out and drifts; no line-up facing each other and no break into action, scoreboard unchanged."
+ },
+ "spread5:200": {
+  "play": true,
+  "confidence": 0.8,
+  "why": "First frame shows players in motion with defenders pursuing a ball carrier and the clock running from 5:22 to 5:20, then a pile and players dispersing to the sidelines."
+ },
+ "spread5:202": {
+  "play": false,
+  "confidence": 0.7,
+  "why": "Players are scattered and walking around after a play, drifting and regrouping with no lined-up formation breaking or tackle seen."
+ },
+ "spread5:203": {
+  "play": true,
+  "confidence": 0.9,
+  "why": "Teams lined up at scrimmage in frame 1, then players broke downfield chasing the play with the clock running, ending in a tackle and dead time before a replay card."
+ },
+ "spread5:201": {
+  "play": true,
+  "confidence": 0.75,
+  "why": "First frame shows players spread downfield mid-action with a runner and pursuers, the clock moves from 5:25 to 5:21, then players walk off and a replay card follows."
+ },
+ "spread5:205": {
+  "play": true,
+  "confidence": 0.8,
+  "why": "Players are running downfield in open-field pursuit, the game clock runs from 4:9 to 4:1, and play ends near the sideline before a replay card appears."
+ },
+ "spread5:207": {
+  "play": true,
+  "confidence": 0.93,
+  "why": "Teams lined up at scrimmage in the first frame, then the formation broke with players running downfield and one on the ground, before regrouping afterward."
+ },
+ "spread5:206": {
+  "play": false,
+  "confidence": 0.75,
+  "why": "Players from both teams drift loosely across the field toward the right with officials walking along, never lining up facing each other or breaking from a formation."
+ },
+ "spread5:209": {
+  "play": false,
+  "confidence": 0.85,
+  "why": "Teams are at the sidelines in a timeout or break, with officials standing and players drifting back onto the field; no lineup or snap is seen."
+ },
+ "spread5:211": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "First frame shows players engaged at the line just after the snap, then players spread downfield toward the end zone and the game clock runs from 2:31 to 2:28, followed by players gathering afterward."
+ },
+ "spread5:210": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "First frame shows the line breaking with players engaging and a ball carrier, then a pile forms and players are on the ground, with the game clock running from 3:33 to 3:24."
+ },
+ "spread5:208": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "The first frame shows action already underway with players converging on a ball carrier near the line, the second shows players on the ground in a pile, and the later frames show the teams regrouping after the tackle."
+ },
+ "spread5:212": {
+  "play": false,
+  "confidence": 0.75,
+  "why": "Players are scattered and drifting toward the sidelines with coaches on the field, the visiting team clustered by their bench; no line-up and no snap breaking apart is visible, consistent with a timeout or a break."
+ },
+ "spread5:213": {
+  "play": false,
+  "confidence": 0.7,
+  "why": "Kickoff-type setup with white team lined up and kneeling, red players spread out, but no kick or breakup of formation occurs in any frame."
+ },
+ "spread5:214": {
+  "play": true,
+  "confidence": 0.8,
+  "why": "Players are already running downfield in the first frame, and the action continues to a tackle with a player on the ground, while the clock is running before a replay card appears."
+ },
+ "spread5:215": {
+  "play": false,
+  "confidence": 0.9,
+  "why": "One team stays gathered near its sideline with a coach while officials and a coach talk midfield; no line-up or snap occurs, consistent with a timeout."
+ },
+ "spread5:216": {
+  "play": false,
+  "confidence": 0.88,
+  "why": "Officials and coaches confer mid-field while the team stays gathered near the sideline throughout, with no lineup or snap, which looks like a timeout or conference."
+ },
+ "spread5:217": {
+  "play": false,
+  "confidence": 0.93,
+  "why": "A timeout: the red team is huddled with coaches near its sideline and the other team is gathered at its own sideline in every frame, and no line-up or snap ever happens."
+ },
+ "spread5:218": {
+  "play": true,
+  "confidence": 0.8,
+  "why": "The first frame shows action already in motion with players running downfield, and in later frames the teams regroup after the play."
+ },
+ "spread5:219": {
+  "play": true,
+  "confidence": 0.85,
+  "why": "The first frame shows action already underway with players spread and running downfield, and the following frames show a converged cluster before players regroup and walk away while the clock runs."
+ },
+ "spread5:221": {
+  "play": false,
+  "confidence": 0.97,
+  "why": "The clock reads 0:00 and the teams walk off and line up for the postgame handshake, so no snap occurs."
+ },
+ "spread5:220": {
+  "play": true,
+  "confidence": 0.8,
+  "why": "Frame 1 shows the teams clashing at the line with players spread downfield, frame 2 shows the action continuing with players pursuing, and then the players drift apart before a replay card appears."
+ },
+ "spread5:224": {
+  "play": false,
+  "confidence": 0.93,
+  "why": "A team stays gathered in a tight knot with coaches near the end zone in all three frames, and no lineup or snap occurs."
+ },
+ "spread5:222": {
+  "play": false,
+  "confidence": 0.97,
+  "why": "Teams are in a postgame handshake line and then a team walks off together; no lineup or snap occurs."
+ },
+ "spread5:223": {
+  "play": false,
+  "confidence": 0.85,
+  "why": "Post-game scene: teams in groups with coaches and staff milling on the field, players celebrating and gathering, no lined-up formation or snap."
+ },
+ "spread5:225": {
+  "play": false,
+  "confidence": 0.85,
+  "why": "Teams are gathered in sideline clusters with coaches and the camera pans an empty field; no lineup or snap is seen."
+ },
+ "spread5:228": {
+  "play": false,
+  "confidence": 0.95,
+  "why": "Players with helmets off are walking off the field in a crowd after the game, with no lineup or snap."
+ },
+ "spread5:226": {
+  "play": false,
+  "confidence": 0.93,
+  "why": "Post-game scene: the field is empty at first, then both teams sit gathered in knots near the end zones with coaches and never line up facing each other."
+ },
+ "spread5:229": {
+  "play": false,
+  "confidence": 0.93,
+  "why": "Players stand scattered in small groups holding helmets near the sideline, likely pre-game or post-game, with no lineup or snap."
+ },
+ "spread5:227": {
+  "play": false,
+  "confidence": 0.93,
+  "why": "Teams are gathered in end-zone groups (one kneeling, one standing with coaches) as in a postgame or between-periods gathering; no lineup or snap occurs."
+ },
+ "spread5:230": {
+  "play": false,
+  "confidence": 0.96,
+  "why": "Post-game scene: crowd and players milling on the field, team gathered kneeling near the end zone, no lineup or snap."
+ },
+ "spread5:231": {
+  "play": false,
+  "confidence": 0.95,
+  "why": "Post-game scene: spectators and players milling on the field, team gathered near end zone, no lineup or snap."
+ },
+ "spread5:232": {
+  "play": false,
+  "confidence": 0.85,
+  "why": "White team celebrating and running across the field with fans on the sideline, then gathering near the end zone — end-of-game celebration, no lined-up snap."
+ },
+ "spread5:235": {
+  "play": false,
+  "confidence": 0.95,
+  "why": "Players, families and fans are milling around on the field after the game, with no teams lined up and no snap."
+ },
+ "spread5:236": {
+  "play": false,
+  "confidence": 0.88,
+  "why": "Only small groups of people and spectators stand around near the sideline and end zone; the field is mostly empty, with no teams lined up and no snap, which looks like post-game or pre-game."
+ },
+ "spread5:234": {
+  "play": false,
+  "confidence": 0.97,
+  "why": "Players mingle with families and fans holding balloons and flowers on the field, a senior-night or post-game ceremony with no formation or snap."
+ },
+ "spread5:233": {
+  "play": false,
+  "confidence": 0.85,
+  "why": "White-clad team runs across the field in a loose celebratory group while sideline crowds gather, looking like the end of the game rather than any lined-up snap."
  }
 }

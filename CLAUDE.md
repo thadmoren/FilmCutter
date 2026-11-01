@@ -528,6 +528,63 @@ mostly *"the teams walk up and set, but nothing breaks open by the last frame"* 
 mislabelled here rather than missed by the model. If this is pushed further, a fourth frame
 later in the clip is the obvious thing to try before anything cleverer.
 
+**More frames do not help, and the reason rewrites the problem.** Measured 2026-11-01,
+$2.54, against the same 222 labels. The shipped pass sees snap+2/+6/+10 and nothing later,
+however long the clip is — and on this game **43 % of junk clips have more than 10 s that
+is never looked at, against 16 % of snaps**, so the model is shown systematically less of
+the junk. The obvious fix is to spread the frames: keep the two early ones and put three
+more across the rest of the clip (4.6 frames a clip after short ones dedupe).
+`research/judge5.js` does exactly that, with a prompt that also names the two shapes the
+owner reported; every answer it got is in `research/judge-answers.json` under the
+`spread5` tag, beside the `picture` and `clock` runs, so none of this needs paying for
+twice.
+
+| min confidence | 3 frames, old prompt | | 5 frames spread, new prompt | |
+|---|---|---|---|---|
+| | junk caught | snaps lost | junk caught | snaps lost |
+| 0.80 | 73 | 2 | 65 | 2 |
+| 0.90 (`AI_CONF`) | **46** | **0** | **39** | **0** |
+| 0.95 | 33 | 0 | 30 | 0 |
+
+**Worse at every threshold, and it caught exactly zero junk clips the three-frame version
+missed.** It costs 70 % more and takes half a minute longer a game. Do not ship it.
+
+**Why it loses is the useful part. The model was never failing to see the timeouts.** Read
+its own reasons: **20 of the 97 junk answers already name a timeout, a penalty or officials
+conferring** — *"Red team stays gathered near its sideline with a coach… which looks like a
+timeout"* — and it marks them `play: false`. It is right about them. It is simply **not sure
+enough**, and they sit at 0.68–0.88, just under the `AI_CONF` 0.90 bar. Spreading the frames
+made it *less* sure, not more (mean confidence on junk moved **−0.068**), because a clip that
+ends in dead time gives it more to hedge about; seven junk clips the three-frame version was
+sure of slid under the bar. Confident timeout/penalty catches went **9 down to 5**.
+
+**So the lever for this leftover is `AI_CONF`, not the pictures.** On the three-frame
+version, which is what ships:
+
+| `AI_CONF` | junk caught | snaps lost in 125 |
+|---|---|---|
+| 0.90 (today) | 46 | 0 |
+| 0.85 | 63 | 2 |
+| **0.80** | **73** | **2** |
+| 0.75 | 84 | 3 |
+| 0.70 | 93 | 5 |
+
+0.80 strictly beats 0.85 — the same two plays, ten more junk clips — so if the bar ever
+moves it moves to 0.80, never to 0.85. That is **27 more junk clips a game for 2 real plays
+in 125**, and the plays are set `off`, not deleted, so "Keep all" returns them. It is the
+owner's call, not a measurement's: this file's standing rule is that losing a play is worse
+than keeping junk, and 0.90 is the only lossless setting. **Do not move it to 0.88** because
+the table says 48 there — two clips on one film is noise, and picking a cut because it looks
+good on the film you measured on is the error this file already records once.
+
+**The prompt change was reverted unmeasured.** Naming penalties and timeouts in `AI_ASK`
+was committed before any of this was measured, and the only run it ever had was the
+five-frame one, where it did worse. One of its sentences — that dead time at the end of the
+clip is normal — is simply false of three frames spanning ten seconds, and would make the
+model hedge for nothing. `index.html` is back to the exact prompt the 125/125 + 46 figures
+were measured on. If it is tried again it must be measured **at three frames**, which is
+~$1.50 against the cached frames.
+
 **What survives it, from the owner's own first full run (2026-11-01).** He cut the whole
 3 h 19 m game with the pass on — 236 found, 52 set aside, **184 kept** (the measurement
 above predicted 48 set aside, so the page is doing on his film what it did on the labels) —
@@ -539,20 +596,18 @@ middle of the field heading for their coaches, has men moving all over the frame
 three shots — which is what the prompt described a play as — and nobody is tackled and
 nothing piles up. This is also the one class of junk the detector *must* leave to the model:
 both sit on a stopped clock (forbidden), both keep a full field of men (so the head count
-is blind), and both move the picture as much as a play does (so peak motion is blind). The
-prompt now names them, with the converse spelled out too — a snap followed by a flag or a
-timeout is still a snap — because a flag is thrown *on* a play often enough that the
-obvious wording would have cost real plays.
+is blind), and both move the picture as much as a play does (so peak motion is blind).
 
-**That edit has not been re-measured.** The 125/125 and 48-junk figures in the table were
-taken with the earlier wording, and `play-labels.json` plus `scratchpad/judge/judge.js` can
-re-score it for about $1.50 (the frames are cached on disk; only the calls cost). Until that
-is run the table is evidence for the approach, not for the prompt now in the page.
+The obvious response — tell the prompt about them — was tried and is written up under
+"More frames do not help" above. **The model already knows.** It names these clips as
+timeouts and penalties in its own reasons and marks them `play: false`; it is held back by
+`AI_CONF`, not by ignorance, and telling it again made it hedge rather than commit.
 
-**Cost: $3.68 for everything above** — $1.51 for 222 clips on the picture prompt, $1.84 for
-the clock comparison, $0.33 for a 40-clip pilot. About **1.5¢ a clip**, so ~$1.50 a game on
-Opus 5.5, and the Batch API would halve it. Frames and answers are cached on disk, so
-re-running costs nothing.
+**Cost: $6.22 on this file's measurements in all** — $3.68 to establish the pass ($1.51 for
+222 clips on the picture prompt, $1.84 for the clock comparison, $0.33 for a 40-clip
+pilot), and $2.54 to rule out five spread frames. About **1.5¢ a clip**, so ~$1.50 a game
+on Opus 5.5, and the Batch API would halve it. Frames and answers are cached on disk, so
+re-running any of it costs nothing.
 
 **What this does not yet prove.** One game, one camera, one night; the old regression film
 is gone, so there is no second film to check it on. Everything in this file that looked
