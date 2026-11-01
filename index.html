@@ -140,7 +140,7 @@
 <div class="wrap film">
   <h1>🎬 Film Cutter</h1>
   <div class="sub">Open a full game — get every play, with the dead time cut out.
-    <span class="ver">v2026.10.31.8</span></div>
+    <span class="ver">v2026.10.31.9</span></div>
   <div class="family">Same family as <a href="../FormationDrawer/">🏈 Formation Drawer</a></div>
 
     <p class="film-note">Turns a full game into one video per play, from 5 s before the snap to 5 s after
@@ -225,7 +225,6 @@ const PLAY_LO = 6, PLAY_HI = 4;    // seconds a bump must last to be a play, acr
 const AI_MODEL = "claude-opus-5-5";
 const AI_CONF = 0.90;              // only set aside junk the model is this sure of
 const AI_W = 640, AI_H = 360;      // it needs this much picture; 320x180 was never tested
-const AI_SHOTS = [2, 6, 10];       // seconds past the snap — the picker's own three frames
 const AI_CONC = 6;                 // requests in flight at once
 const FF_RECYCLE = 40;             // clips per ffmpeg instance before it is restarted; its
                                    // heap only grows and dies past ~120 on a whole game
@@ -689,7 +688,7 @@ const snapAt = p => Math.max(0, Math.round(p.s + PRE));   // the ball goes about
 // reads as a play). These three are the set the labelling used: the ball going, the play
 // developing, everybody getting up. Clamped inside the clip so a short one never shows
 // film belonging to the next play.
-const SHOTS = [2, 6, 10];
+const SHOTS = [2, 6, 10];   // seconds past the snap: the picker and the AI pass share these
 const DELAY = SHOTS.map((_, k) => -((SHOTS.length - k) % SHOTS.length) * (2.1 / SHOTS.length) + "s");
 const shotAt = (p, k) => Math.min(snapAt(p) + SHOTS[k], Math.max(snapAt(p), Math.round(p.e)));
 // the tile can only cycle once it has the whole set; until then it shows the first frame
@@ -857,7 +856,7 @@ acv.width = AI_W; acv.height = AI_H;
 const actx = acv.getContext("2d");
 actx.imageSmoothingQuality = "high";
 const aiSaid = new Map();                // play start second -> {play, confidence}
-let aiRun = 0;
+let aiRun = 0, aiFailed = "";   // why the AI pass gave up, repeated at the end of the cut
 
 const AI_ASK = `You are watching American high-school football film from a single fixed
 camera. It is wide: the players are small.
@@ -899,7 +898,15 @@ async function aiJudge(key, shots) {
     }),
   });
   const j = await r.json();
-  if (!r.ok) throw new Error((j.error && j.error.message) || `HTTP ${r.status}`);
+  if (!r.ok) {
+    const msg = (j.error && j.error.message) || `HTTP ${r.status}`;
+    const e = new Error(msg);
+    // a wrong key or an empty account fails every single clip: say so once and stop,
+    // rather than firing another two hundred requests that cannot possibly work
+    e.fatal = r.status === 401 || r.status === 403 ||
+              /credit|balance|quota|not have access/i.test(msg);
+    throw e;
+  }
   if (j.stop_reason === "refusal") throw new Error("the model declined this one");
   const txt = (j.content || []).filter(b => b.type === "text").map(b => b.text).join("");
   const m = txt.match(/\{[^{}]*\}/);               // it may wrap the JSON in prose
@@ -907,27 +914,28 @@ async function aiJudge(key, shots) {
   return JSON.parse(m[0]);
 }
 
-async function aiPass(opts = {}) {
-  if (aiRun) { aiRun = 0; return; }                // a second click stops it
+// No dialog anywhere: saving a key is the decision, and being asked again on every game is
+// what made this unusable. Called only from the cut, after the scan and before any clip is
+// written. Returns quietly on anything that means "not now".
+async function aiPass() {
+  if (aiRun) { aiRun = 0; return; }                // Cut pressed again: stop
   if (scanning || !fv.duration || !plays.length) return;
-  const key = askKey(false);              // asks once, then never again on this browser
+  const key = aiKey();
   if (!key) return;
   const todo = plays.filter(p => !aiSaid.has(snapAt(p)));
-  if (!todo.length) return say("Claude has already seen every clip.");
-  // No dialog. Pressing a button called "Sharpen with AI", or having saved a key and
-  // pressed Cut, is the decision; asking again on every game is what made this unusable.
+  if (!todo.length) return;
   const run = ++aiRun;
   thumbRun++;                                      // the thumbnails must let go of the video
   const back = fv.currentTime, note = fMsg.textContent;
   fv.pause();
   const seek = t => new Promise(res => { fv.addEventListener("seeked", res, {once: true}); fv.currentTime = t; });
-  let done = 0, bad = 0;
+  let done = 0, bad = 0, failMsg = "", gaveUp = false;
   const flying = new Set();            // requests in the air; each clears itself on landing
   try {
     for (const p of todo) {
       if (run !== aiRun) break;
       const shots = [];
-      for (const off of AI_SHOTS) {                // seeks must be one at a time
+      for (const off of SHOTS) {                // seeks must be one at a time
         const t = Math.min(snapAt(p) + off, Math.max(snapAt(p), Math.round(p.e)));
         if (t >= fv.duration) break;
         await seek(t);
@@ -935,11 +943,16 @@ async function aiPass(opts = {}) {
         actx.drawImage(fv, 0, 0, AI_W, AI_H);
         shots.push(acv.toDataURL("image/jpeg", 0.5).split(",")[1]);
       }
-      if (run !== aiRun || shots.length < AI_SHOTS.length) break;
+      if (run !== aiRun || shots.length < SHOTS.length) break;
       const at = snapAt(p);
       const job = aiJudge(key, shots)
         .then(a => { aiSaid.set(at, a); })
-        .catch(e => { bad++; if (bad === 1) say("AI: " + e.message); })
+        .catch(e => {
+          bad++;
+          if (!failMsg) failMsg = e.message;
+          // a key that cannot work, or nothing but failures: stop instead of grinding on
+          if (e.fatal || (bad >= 5 && bad === done + 1)) { gaveUp = true; aiRun = 0; }
+        })
         .then(() => {
           flying.delete(job);
           done++;
@@ -960,10 +973,20 @@ async function aiPass(opts = {}) {
     if (a && !a.play && a.confidence >= AI_CONF && !p.off) { p.off = true; off++; }
   }
   edited = true; save(); renderPlays(); renderPick(); drawTl(); countPick();
-  say(off ? `Claude set aside ${off} clip${off === 1 ? "" : "s"} that aren't football. ` +
-            `"Keep all" brings them back.`
-          : bad ? note : "Claude didn't find anything it was sure wasn't football.");
-  setTimeout(fillThumbs, 60);
+  // Say plainly what happened, and never let a silent failure look like a clean result:
+  // "nothing was set aside" and "none of it worked" are very different things.
+  // the cut starts the moment this returns and overwrites the message, so a failure is
+  // also kept here and repeated at the end, where it will still be on screen
+  aiFailed = gaveUp ? failMsg : "";
+  say(gaveUp
+        ? `Claude couldn't be reached — ${failMsg}. Cutting all ${kept().length} clips instead. ` +
+          `Check the key at step 2, or that the account has credit.`
+      : off
+        ? `Claude set aside ${off} clip${off === 1 ? "" : "s"} that aren't football. ` +
+          `"Keep all" brings them back.`
+      : bad
+        ? `Claude answered on ${done - bad} of ${todo.length} clips and set none aside (${bad} failed: ${failMsg}).`
+        : "Claude didn't find anything it was sure wasn't football.");
 }
 
 fPickAll.addEventListener("click", () => {        // undo the lot and start again
@@ -1148,7 +1171,7 @@ async function exportClips() {
   // No key, no pass, no dialog: the cut goes ahead exactly as it did before.
   if (aiKey() && plays.some(p => !aiSaid.has(snapAt(p)))) {
     exporting = () => { aiRun = 0; }; fExp.textContent = "Stop";   // Cut stops the pass too
-    await aiPass({skipConfirm: true});
+    await aiPass();
     exporting = null; fExp.textContent = "Cut into clips";
     if (!kept().length) return say("Everything was set aside. Click Keep all to put them back.");
   }
@@ -1208,8 +1231,9 @@ async function exportClips() {
       }
       done++;
     }
-    say(stopped ? `Stopped after ${done} of ${list.length} clips.`
-                : `Done: ${done} clips saved${dir && dir.name ? ` in the "${dir.name}" folder` : ""}.`);
+    const note = aiFailed ? `  Claude was not used — ${aiFailed}. Check the key at step 2.` : "";
+    say((stopped ? `Stopped after ${done} of ${list.length} clips.`
+                 : `Done: ${done} clips saved${dir && dir.name ? ` in the "${dir.name}" folder` : ""}.`) + note);
   } catch (e) {
     say(stopped ? `Stopped after ${done} clips.`
                 : `Cutting failed${done ? ` after ${done} clips` : ""}: ${e.message || e}`);

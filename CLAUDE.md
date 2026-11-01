@@ -539,13 +539,23 @@ lossless on one game and failed on another failed exactly here. Before shipping 
 on a film with no NFHS overlay, in daylight, from a different camera — the `--clock` /
 picture gap is the test to repeat, and it should stay near zero.
 
-**It is offered inside the cut, not left to be found.** `exportClips` asks — once, after
-the scan and before a single clip is written — whether to let Claude sort them first, with
-the cost in the question. That is the moment it is worth something: every clip set aside is
-one that is never cut, never written and never watched. The owner asked for exactly this
-("should ask for sharpen with AI before cutting into clips"), and he is right. "Sharpen
-with AI" stays in the picker bar for running it again by hand, and it only ever asks about
-clips it has not already judged, so a second cut of the same game goes straight through.
+**It happens inside the cut, by itself, with no dialog.** `exportClips` runs the pass after
+the scan and before a single clip is written — the moment it is worth something, since every
+clip set aside is one never cut, written or watched. **Saving a key is the decision**; there
+is no confirm, no cost prompt and no button, because being asked again on every game is
+exactly what made the first version unusable ("IT SHOULD SHARPEN WITH AI AUTOMATICALLY").
+No key means no pass and no dialog: the cut goes ahead as it always did. It judges only
+clips it has not already seen, so a second cut of the same game goes straight through.
+There was a "Sharpen with AI" button in the picker bar; it was removed, because it did
+nothing the cut did not already do and it lived in `#fPickWrap`, which is hidden until a
+scan has produced plays — so most of the time it could not even be clicked.
+
+**A key that cannot work must fail loudly and early.** A wrong key or an empty account
+fails every clip, and the first version counted the failures, said nothing, and cut all 236
+as though the pass had simply found nothing. Now `aiJudge` marks 401/403 and credit errors
+`fatal`, the pass stops on the first one (or on five straight failures), and the message
+says which it was and what to check. "Nothing was set aside" and "none of it worked" must
+never look the same.
 
 **The key is step 2 of the three, in front of "Cut into clips"** — not in the picker, which
 is `hidden` until a scan has produced plays and so shows nothing at all on a fresh page.

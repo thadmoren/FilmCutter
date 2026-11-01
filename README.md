@@ -65,12 +65,11 @@ drops out, and the count on **Cut into clips** follows. Nothing is thrown away: 
 all** puts them back, and the ▶ by a picture plays that bit if you're not sure. The
 pictures take about a minute to come in for a whole game.
 
-**Or let Claude do it for you.** Put an API key in at step 2 and, when you press Cut into
-clips, it offers to sort them first: it looks at three frames of every clip and sets aside
-the ones it's sure aren't football, before anything gets cut. On a full game that's about
-half the junk gone, and in testing it didn't drop a single real play. Nothing is deleted;
-**Keep all** still brings everything back, and "Sharpen with AI" in the picker runs it
-again by hand.
+**Or let Claude do it for you.** Put an API key in at step 2 and it happens by itself: when
+you press Cut into clips, Claude looks at three frames of every clip and sets aside the ones
+it's sure aren't football, before anything gets cut. On a full game that's about half the
+junk gone, and in testing it didn't drop a single real play. Nothing is deleted — **Keep
+all** brings everything back. No key, no charge, and the app behaves exactly as before.
 
 This one is optional and costs a little money, because it needs your own API key from
 [console.anthropic.com](https://console.anthropic.com) — about **$1.50 for a whole game**.
