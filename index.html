@@ -102,7 +102,7 @@
   .play input.bad { border-color:var(--err); }
   .play button { font-size:.8rem; padding:4px 7px; flex:none; border-radius:8px; background:transparent;
     color:var(--chip-text); border:1px solid var(--border); }
-  /* picking the plays by eye: one thumbnail each, click to drop */
+  /* picking the plays by eye: three frames each, cycling, click to drop */
   #fPickWrap { margin-top:14px; }
   .pickbar { display:flex; gap:10px; align-items:baseline; flex-wrap:wrap; margin-bottom:8px; }
   .pickbar .hint { flex:1; min-width:12em; }
@@ -113,6 +113,17 @@
     border:2px solid transparent; background:var(--panel); line-height:0; }
   .pick figure:focus-visible { outline:2px solid var(--border-focus); outline-offset:2px; }
   .pick img, .pick .ph { display:block; width:100%; aspect-ratio:16/9; object-fit:cover; background:var(--chip-bg); }
+  /* A still can't tell a snap from a huddle — the owner said so and the labelling proved
+     it — so each tile holds three frames across the play and cycles them. The first is in
+     flow and gives the tile its height; the others sit on top, hidden until all three have
+     arrived and the whole set can run. One shared CSS animation, offset by a third each,
+     so there is no timer in JS and nothing to keep in step. */
+  .pick .shot { position:relative; display:block; }
+  .pick .shot > :not(:first-child) { position:absolute; inset:0; opacity:0; }
+  .pick .shot.cyc > * { animation:pickflip 2.1s infinite; }
+  .pick figure.off .shot > * { animation:none; }
+  @keyframes pickflip { 0%, 32% { opacity:1; } 34%, 100% { opacity:0; } }
+  @media (prefers-reduced-motion: reduce) { .pick .shot.cyc > * { animation:none; } }
   .pick figcaption { font-size:.72rem; line-height:1.5; padding:2px 3px 2px 5px; color:var(--muted);
     font-variant-numeric:tabular-nums; display:flex; justify-content:space-between; align-items:center; gap:4px; }
   .pick .go { font:inherit; color:var(--chip-text); background:transparent; border:0; padding:0 3px;
@@ -129,7 +140,7 @@
 <div class="wrap film">
   <h1>🎬 Film Cutter</h1>
   <div class="sub">Open a full game — get every play, with the dead time cut out.
-    <span class="ver">v2026.10.30.1</span></div>
+    <span class="ver">v2026.10.31.1</span></div>
   <div class="family">Same family as <a href="../FormationDrawer/">🏈 Formation Drawer</a></div>
 
     <p class="film-note">Turns a full game into one video per play, from 5 s before the snap to 5 s after
@@ -149,7 +160,7 @@
     <section id="fPickWrap" hidden>
       <div class="pickbar">
         <strong id="fPickCount"></strong>
-        <span class="hint">One picture per play, taken as the ball goes. Click any you don't want.</span>
+        <span class="hint">Three frames across each play, cycling — a still can't tell a snap from a huddle. Click any you don't want.</span>
         <button class="sm" id="fPickAll" type="button">Keep all</button>
       </div>
       <div id="fPick" class="pick"></div>
@@ -653,11 +664,25 @@ tcv.width = TW; tcv.height = TH;
 const tctx = tcv.getContext("2d");
 tctx.imageSmoothingQuality = "high";
 const thumbs = new Map();                // second -> data URL, kept for the session
-const tiles = new Map();                 // second -> the figures showing it
+const tiles = new Map();                 // second -> [{shot, k}] the tiles and slots using it
 let thumbRun = 0;                        // bumped to call off a fill already running
 
 const kept = () => plays.filter(p => !p.off);
 const snapAt = p => Math.max(0, Math.round(p.s + PRE));   // the ball goes about here
+// One frame is not enough to tell a snap from a huddle — the owner said as much of the
+// old picker, and labelling all 236 clips proved it (a still of players walking about
+// reads as a play). These three are the set the labelling used: the ball going, the play
+// developing, everybody getting up. Clamped inside the clip so a short one never shows
+// film belonging to the next play.
+const SHOTS = [2, 6, 10];
+const DELAY = SHOTS.map((_, k) => -((SHOTS.length - k) % SHOTS.length) * (2.1 / SHOTS.length) + "s");
+const shotAt = (p, k) => Math.min(snapAt(p) + SHOTS[k], Math.max(snapAt(p), Math.round(p.e)));
+// the tile can only cycle once it has the whole set; until then it shows the first frame
+function cyc(shot) {
+  const full = [...shot.children].length === SHOTS.length
+    && [...shot.children].every(c => c.tagName === "IMG");
+  shot.classList.toggle("cyc", full);
+}
 
 function countPick() {
   const k = kept().length;
@@ -674,10 +699,19 @@ function renderPick() {
     fig.tabIndex = 0;
     fig.title = "Click to drop this one";
     if (p.off) fig.classList.add("off");
-    const t = snapAt(p), src = thumbs.get(t);
-    const pic = document.createElement(src ? "img" : "div");
-    if (src) { pic.src = src; pic.alt = ""; } else pic.className = "ph";
-    fig.appendChild(pic);
+    const shot = document.createElement("div");
+    shot.className = "shot";
+    SHOTS.forEach((_, k) => {
+      const t = shotAt(p, k), src = thumbs.get(t);
+      const pic = document.createElement(src ? "img" : "div");
+      if (src) { pic.src = src; pic.alt = ""; } else pic.className = "ph";
+      pic.style.animationDelay = DELAY[k];
+      shot.appendChild(pic);
+      if (!tiles.has(t)) tiles.set(t, []);
+      tiles.get(t).push({shot, k});
+    });
+    cyc(shot);
+    fig.appendChild(shot);
     const cap = document.createElement("figcaption");
     const a = document.createElement("span"); a.textContent = i + 1;
     const b = document.createElement("button");   // check a doubtful one without dropping it
@@ -701,8 +735,6 @@ function renderPick() {
     fig.addEventListener("keydown", e => {
       if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
     });
-    if (!tiles.has(t)) tiles.set(t, []);
-    tiles.get(t).push(fig);
     fPick.appendChild(fig);
   });
   countPick();
@@ -713,7 +745,14 @@ function renderPick() {
 async function fillThumbs() {
   if (scanning || !fv.duration || !plays.length) return;
   const run = ++thumbRun;
-  const want = [...new Set(plays.map(snapAt))].filter(t => !thumbs.has(t) && t < fv.duration);
+  // in play order, all three frames of one tile together: the seeks stay a few seconds
+  // apart instead of sweeping the whole film three times, and a tile is useful the moment
+  // its set is complete rather than after every tile has its first frame.
+  const want = [], seen = new Set();
+  plays.forEach(p => SHOTS.forEach((_, k) => {
+    const t = shotAt(p, k);
+    if (t < fv.duration && !thumbs.has(t) && !seen.has(t)) { seen.add(t); want.push(t); }
+  }));
   if (!want.length) return;
   const back = fv.currentTime, note = fMsg.textContent;
   fv.pause();
@@ -726,11 +765,13 @@ async function fillThumbs() {
       tctx.drawImage(fv, 0, 0, TW, TH);
       thumbs.set(want[i], tcv.toDataURL("image/jpeg", 0.5));
     } catch (e) { break; }
-    (tiles.get(want[i]) || []).forEach(fig => {
-      const ph = fig.querySelector(".ph");
-      if (!ph) return;
+    (tiles.get(want[i]) || []).forEach(({shot, k}) => {
+      const ph = shot.children[k];
+      if (!ph || ph.tagName === "IMG") return;
       const im = new Image(); im.src = thumbs.get(want[i]); im.alt = "";
-      fig.replaceChild(im, ph);
+      im.style.animationDelay = DELAY[k];
+      shot.replaceChild(im, ph);
+      cyc(shot);
     });
     if (i % 10 === 0) say(`Getting the pictures… ${i + 1} of ${want.length}`);
   }

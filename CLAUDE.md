@@ -494,20 +494,34 @@ half — 123 of the first 340 were. `JOIN` (0 s of slack) glues them back; more 
 chains clips into 160 s monsters, so do not raise it. This took the game from 340 to
 236 and the old half from 47 to 36 without losing a single hand-timed snap.
 
-The owner still gets the last word on what is left. After the finder runs, `#fPick` shows **one thumbnail
-per play, taken `PRE` seconds in — where the ball goes** — and clicking one drops it.
-**One frame is not enough to judge by** — see "What is left over, labelled properly":
-the owner can't tell a snap from a huddle in a still, and neither can this file's own
-earlier labels. If the picker is ever meant to be used in earnest, the tile has to move
-(cycle three or four frames across the clip); the thumbnails are already fetched by
-second, so the frames are most of the way there.
+The owner still gets the last word on what is left. After the finder runs, `#fPick` shows
+**three frames across each play, cycling** — at `PRE + SHOTS` (2, 6, 10 s), the same set
+the labelling used — and clicking a tile drops it. It was one still per play until
+2026-10-31, and **one frame is not enough to judge by**: see "What is left over, labelled
+properly", where the owner said he couldn't tell from thumbnails and relabelling all 236
+clips three frames at a time proved him right. Players standing about read as a play in a
+still; what separates a snap from a huddle is whether anything then happens.
+
+Each tile is a `.shot` div holding three images, the first in flow (it gives the tile its
+height) and the others absolute on top at `opacity:0`. They cycle on **one shared CSS
+animation** (`pickflip`, 2.1 s) with the delay offset a third per slot — `0s`, `-1.4s`,
+`-0.7s` — so there is no timer in JS and nothing to keep in step across 236 tiles. The
+`cyc` class only goes on once all three have arrived, so a half-filled tile sits on its
+first frame instead of flashing blanks; `animation:none` under `figure.off` stops a
+dropped tile so the existing dimming shows. The third frame is clamped to the clip's end,
+so a short clip repeats rather than showing film belonging to the next play.
+Fetching triples: **about a minute for a whole game's 236 plays** (708 seeks, measured),
+against twenty seconds before. The seeks go in play order, all three frames of a tile
+together, which keeps them a few seconds apart instead of sweeping the film three times —
+and a tile becomes useful as soon as its own set is complete.
 Dropped plays keep a `p.off` flag: they stay in the list and in storage (nothing is
 lost, "Keep all" puts them back) but `kept()` skips them, so they are left out of the
 clips, the CSV, the Mac script and the numbering, and the Cut button counts what is
-left. Thumbnails are fetched by seeking, cached by second in `thumbs`, and so a move of
-the Sensitivity slider only fetches the plays that are new; 340 of them take about half
-a minute. They are **not** persisted — on a reload the grid draws placeholders and
-fills them again. `thumbRun` cancels a fill when a scan takes the video over.
+left. Thumbnails are fetched by seeking and cached **by second** in `thumbs`, not by
+play, so a move of the Sensitivity slider only fetches the frames that are new and two
+clips wanting the same second share one. They are **not** persisted — on a reload the
+grid draws placeholders and fills them again. `thumbRun` cancels a fill when a scan takes
+the video over.
 
 The page is two steps (Choose game video, **Cut into clips**) plus the picker, plus a
 closed `<details id="fMore">` holding the review tools: Find plays, Sensitivity, the video,

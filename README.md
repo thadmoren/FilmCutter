@@ -57,10 +57,13 @@ the camera swinging round to the crowd or down the sideline between plays, or fr
 huddle or a timeout — there are players on the grass for those too. Most of what's left
 over is during the game itself.
 
-So it also shows you **one picture per play, taken as the ball goes**. You can ignore it
-and just press Cut into clips — or click any picture that isn't football and it drops
-out, and the count on **Cut into clips** follows. Nothing is thrown away: **Keep all**
-puts them back, and the ▶ by a picture plays that bit if you're not sure.
+So it also shows you **a small moving picture of each play** — three frames taken across
+it, cycling, because a single still can't tell a snap from a huddle: players standing
+about look the same either way until you see whether anything happens. You can ignore the
+grid and just press Cut into clips — or click any picture that isn't football and it
+drops out, and the count on **Cut into clips** follows. Nothing is thrown away: **Keep
+all** puts them back, and the ▶ by a picture plays that bit if you're not sure. The
+pictures take about a minute to come in for a whole game.
 
 **Replays** (the red "replay" badge in the top-right corner, as on NFHS Network film)
 and **black screens** (the sponsor card either side of a replay, or an ad break) are
