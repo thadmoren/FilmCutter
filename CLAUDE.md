@@ -539,8 +539,24 @@ lossless on one game and failed on another failed exactly here. Before shipping 
 on a film with no NFHS overlay, in daylight, from a different camera — the `--clock` /
 picture gap is the test to repeat, and it should stay near zero.
 
-**It ships as "Sharpen with AI"** in the picker bar, off until the owner presses it. The
-key is his own, kept in `localStorage` under `filmCutter:aiKey`, and the call goes straight
+**It is offered inside the cut, not left to be found.** `exportClips` asks — once, after
+the scan and before a single clip is written — whether to let Claude sort them first, with
+the cost in the question. That is the moment it is worth something: every clip set aside is
+one that is never cut, never written and never watched. The owner asked for exactly this
+("should ask for sharpen with AI before cutting into clips"), and he is right. "Sharpen
+with AI" stays in the picker bar for running it again by hand, and it only ever asks about
+clips it has not already judged, so a second cut of the same game goes straight through.
+
+**The key is step 2 of the three, in front of "Cut into clips"** — not in the picker, which
+is `hidden` until a scan has produced plays and so shows nothing at all on a fresh page.
+That mistake was made once here; anything the owner needs *before* he starts cannot live
+inside `#fPickWrap`. The button shows its own state — `add key`, or `key ✓ …1234` with the
+last four characters — because a key you cannot see is a key you cannot trust: a pop-up
+that asks again every time is indistinguishable from one that never saved. If the browser
+refuses to store it (a private window), the page now says so instead of silently forgetting.
+Storage is **per site**, so `localhost:5004` and the published page each hold their own.
+
+The key is his own, kept in `localStorage` under `filmCutter:aiKey`, and the call goes straight
 from the page to `api.anthropic.com` — **no SDK**. Three headers do it: `x-api-key`,
 `anthropic-version: 2026-10-21` and **`anthropic-dangerous-direct-browser-access: true`**,
 which is the one that makes the browser call legal (it is what the TypeScript SDK's
@@ -613,7 +629,18 @@ names (`clipName`): `play-NNN` counting from the start number, or unnumbered
 `vendor/README.md`): the game `File` is mounted with WORKERFS so ffmpeg reads slices on
 demand (verified on a 2.8 GB mp4, cutting past the 2 GB mark), and each play is a
 stream copy (`-ss` before `-i`, `-c copy`, `-avoid_negative_ts make_zero`), so a clip
-starts on the keyframe at or before its start. Clips keep the source container and drop audio (`-an`; the owner doesn't want it). Output
+starts on the keyframe at or before its start.
+
+**One ffmpeg instance cannot cut a whole game.** Its wasm heap only ever grows, and on the
+3 h 19 m game it died at **clip 120** with `RuntimeError: memory access out of bounds`.
+Deleting each output with `deleteFile` — which the code already did — does not help, because
+the leak is inside the module, not its file system. The cure is a new instance: one is
+started every `FF_RECYCLE` (40) clips, and again on the spot if a cut throws, retrying that
+clip once before giving up. Reloading the core is cheap (the browser has it cached) and the
+WORKERFS mount is only a handle on the `File`. Measured after the fix: **110 clips cut in
+one run, 0 emergency restarts, no short or empty files, 1733 MB out** — two scheduled
+recycles crossed without a mark. Do not raise `FF_RECYCLE` to save the restarts; the whole
+point is that no instance gets near the ceiling. Clips keep the source container and drop audio (`-an`; the owner doesn't want it). Output
 goes to a `showDirectoryPicker` folder where it exists, else one download per clip. On an
 unscanned film it asks for the folder first (needs the tap), then awaits `scan()` (which
 resolves true when the film is fully scanned), then exports: one tap per game.

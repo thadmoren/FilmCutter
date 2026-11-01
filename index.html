@@ -140,7 +140,7 @@
 <div class="wrap film">
   <h1>🎬 Film Cutter</h1>
   <div class="sub">Open a full game — get every play, with the dead time cut out.
-    <span class="ver">v2026.10.31.2</span></div>
+    <span class="ver">v2026.10.31.4</span></div>
   <div class="family">Same family as <a href="../FormationDrawer/">🏈 Formation Drawer</a></div>
 
     <p class="film-note">Turns a full game into one video per play, from 5 s before the snap to 5 s after
@@ -149,7 +149,10 @@
     <ol class="steps">
       <li><span class="n">1</span><label class="filebtn">Choose game video<input type="file" id="fFile" accept="video/*" hidden></label>
         <span class="hint" id="fFileName">No video chosen yet.</span></li>
-      <li><span class="n">2</span><button id="fExp" disabled>Cut into clips</button>
+      <li><span class="n">2</span><button class="sm" id="fKey" type="button" title="Your Anthropic API key, kept in this browser only"></button>
+        <span class="hint">Optional, but do it now if you're going to: with a key, Claude sets aside the clips
+          that aren't football before anything is cut — about half the leftovers, for around $1.50 a game.</span></li>
+      <li><span class="n">3</span><button id="fExp" disabled>Cut into clips</button>
         <span class="hint">Asks which folder to put the clips in, then does the rest.</span></li>
       <li class="opts"><label class="chk"><input type="checkbox" id="fNum" checked> Number the clips, starting at</label>
         <input type="number" id="fStart" min="0" step="1" value="1" inputmode="numeric" aria-label="First clip number">
@@ -226,6 +229,8 @@ const AI_CONF = 0.90;              // only set aside junk the model is this sure
 const AI_W = 640, AI_H = 360;      // it needs this much picture; 320x180 was never tested
 const AI_SHOTS = [2, 6, 10];       // seconds past the snap — the picker's own three frames
 const AI_CONC = 6;                 // requests in flight at once
+const FF_RECYCLE = 40;             // clips per ffmpeg instance before it is restarted; its
+                                   // heap only grows and dies past ~120 on a whole game
 const MEN_FRAC = 0.65;             // a clip showing fewer than this share of the film's
 const MEN_RUN = 3;                 // usual head count, in a stretch of this many in a
 const MEN_MIN = 12;                // row, is set aside — unless the film never shows a
@@ -798,6 +803,42 @@ async function fillThumbs() {
    (the dangerous-direct-browser-access header is what makes that legal), so the film
    never goes anywhere and nothing is uploaded but three small stills per clip. */
 const fAI = document.getElementById("fAI");
+const fKeyBtn = document.getElementById("fKey");
+// The key is the owner's and stays in this browser. It is kept per site, so localhost and
+// the published page each hold their own — paste it once in whichever you use. The button
+// says which state it is in, because a key you cannot see is a key you cannot trust: a
+// pop-up that asks again every time looks exactly like a key that was never saved.
+const AI_KEY = "filmCutter:aiKey";
+const aiKey = () => { try { return localStorage.getItem(AI_KEY) || ""; } catch (e) { return ""; } };
+function setKey(k) {
+  try {
+    if (k) localStorage.setItem(AI_KEY, k); else localStorage.removeItem(AI_KEY);
+  } catch (e) {
+    say("This browser won't let the page remember your key (private window?). " +
+        "It will work for now but will ask again next time.");
+  }
+  showKey();
+  return k;
+}
+function showKey() {
+  const k = aiKey();
+  fKeyBtn.textContent = k ? `key ✓ …${k.slice(-4)}` : "add key";
+  fKeyBtn.title = k ? "Saved in this browser. Click to change or remove it."
+                 : "Paste your Anthropic API key (console.anthropic.com). Kept in this browser only.";
+}
+function askKey(force) {
+  const had = aiKey();
+  if (had && !force) return had;
+  const k = (prompt(had ? `Replace the key ending …${had.slice(-4)}?\n` +
+      "Paste a new one, or clear the box to remove it."
+    : "Paste your Anthropic API key (console.anthropic.com).\n" +
+      "It is kept in this browser only and sent straight to Anthropic.", "") || "").trim();
+  if (k === "" && force) return setKey("") && "";     // cleared on purpose
+  return k ? setKey(k) : had;
+}
+fKeyBtn.addEventListener("click", () => askKey(true));
+showKey();
+
 const acv = document.createElement("canvas");
 acv.width = AI_W; acv.height = AI_H;
 const actx = acv.getContext("2d");
@@ -853,18 +894,15 @@ async function aiJudge(key, shots) {
   return JSON.parse(m[0]);
 }
 
-async function aiPass() {
+async function aiPass(opts = {}) {
   if (aiRun) { aiRun = 0; return; }                // a second click stops it
   if (scanning || !fv.duration || !plays.length) return;
-  let key = localStorage.getItem("filmCutter:aiKey") || "";
-  if (!key) {
-    key = (prompt("Paste your Anthropic API key (console.anthropic.com).\n" +
-      "It is kept in this browser only and sent straight to Anthropic.") || "").trim();
-    if (!key) return;
-    try { localStorage.setItem("filmCutter:aiKey", key); } catch (e) {}
-  }
+  const key = askKey(false);              // asks once, then never again on this browser
+  if (!key) return;
   const todo = plays.filter(p => !aiSaid.has(snapAt(p)));
-  if (!confirm(`Ask Claude about ${todo.length} clip${todo.length === 1 ? "" : "s"}?\n` +
+  if (!todo.length) return say("Claude has already seen every clip.");
+  // the cut flow has asked already; don't make the owner agree to the same thing twice
+  if (!opts.skipConfirm && !confirm(`Ask Claude about ${todo.length} clip${todo.length === 1 ? "" : "s"}?\n` +
     `Roughly $${(todo.length * 0.015).toFixed(2)} on your own API account.\n\n` +
     `Clips it is sure are not football get set aside. Nothing is deleted — ` +
     `"Keep all" brings everything back.`)) return;
@@ -1099,6 +1137,22 @@ async function exportClips() {
     if (!full) return;
     if (!kept().length) return say("No plays found. Open the review section below, raise Sensitivity, then Cut into clips again.");
   }
+  // Offer the AI pass here rather than leaving it to be found in the picker: this is the
+  // moment it is worth something, because every clip it sets aside is one that does not
+  // have to be cut, written and then watched. Asked once per export, and only about clips
+  // it has not already seen, so a second cut of the same game goes straight through.
+  const unseen = plays.filter(p => !aiSaid.has(snapAt(p))).length;
+  if (unseen && confirm(
+      `Ask Claude which of these ${plays.length} clips are football, before cutting?\n\n` +
+      `It sets aside the ones it is sure aren't — on a whole game that is usually about ` +
+      `half the leftovers, and in testing it dropped no real plays. Roughly ` +
+      `$${(unseen * 0.015).toFixed(2)} on your own API account.\n\n` +
+      `Cancel to cut all ${kept().length} as they are.`)) {
+    exporting = () => { aiRun = 0; }; fExp.textContent = "Stop";   // Cut stops the pass too
+    await aiPass({skipConfirm: true});
+    exporting = null; fExp.textContent = "Cut into clips";
+    if (!kept().length) return say("Everything was set aside. Click Keep all to put them back.");
+  }
 
   const ext = (fName.match(/\.[^.]+$/) || [".mp4"])[0].toLowerCase();
   const mp4ish = /^\.(mp4|m4v|mov)$/.test(ext);
@@ -1108,22 +1162,44 @@ async function exportClips() {
   try {
     say("Loading the clip cutter (about 32 MB the first time, then it's cached)…");
     const {FFmpeg} = await import("./vendor/ffmpeg/index.js");
-    ff = new FFmpeg();
     const here = new URL("vendor/ffmpeg-core/", location.href).href;
-    await ff.load({coreURL: here + "ffmpeg-core.js", wasmURL: here + "ffmpeg-core.wasm"});
-    await ff.createDir("/in");
-    await ff.mount("WORKERFS", {files: [fFileObj]}, "/in");
+    // Each clip is cut by a fresh exec, and ffmpeg.wasm's heap only ever grows: on a whole
+    // game it runs out somewhere past a hundred clips and throws "memory access out of
+    // bounds". Deleting the output after each clip is not enough — the leak is inside the
+    // wasm module, not the file system. The only reliable cure is a new instance, so one is
+    // started every FF_RECYCLE clips and again on the spot if a cut fails. Loading the core
+    // again is cheap: the browser has it cached, and the mount is just a handle on the file.
+    const startFF = async () => {
+      const f = new FFmpeg();
+      await f.load({coreURL: here + "ffmpeg-core.js", wasmURL: here + "ffmpeg-core.wasm"});
+      await f.createDir("/in");
+      await f.mount("WORKERFS", {files: [fFileObj]}, "/in");
+      return f;
+    };
+    ff = await startFF();
     const list = kept();
     for (let i = 0; i < list.length && !stopped; i++) {
       const p = list[i], out = "/clip" + ext, name = clipName(p, i, ext);
       fProg.hidden = false; fProg.value = i / list.length;
       say(`Saving clip ${i + 1} of ${list.length}… (${name})`);
-      const code = await ff.exec(["-ss", p.s.toFixed(2), "-i", "/in/" + fFileObj.name,
-        "-t", (p.e - p.s).toFixed(2), "-map", "0:v", "-an", "-c", "copy",
-        "-avoid_negative_ts", "make_zero", ...(mp4ish ? ["-movflags", "+faststart"] : []), out]);
-      if (code !== 0) throw new Error(`ffmpeg couldn't cut play ${i + 1}`);
-      const data = await ff.readFile(out);
-      await ff.deleteFile(out);
+      if (i && i % FF_RECYCLE === 0) { try { ff.terminate(); } catch (e) {} ff = await startFF(); }
+      let data = null;
+      for (let attempt = 0; attempt < 2 && data === null && !stopped; attempt++) {
+        try {
+          const code = await ff.exec(["-ss", p.s.toFixed(2), "-i", "/in/" + fFileObj.name,
+            "-t", (p.e - p.s).toFixed(2), "-map", "0:v", "-an", "-c", "copy",
+            "-avoid_negative_ts", "make_zero", ...(mp4ish ? ["-movflags", "+faststart"] : []), out]);
+          if (code !== 0) throw new Error(`ffmpeg couldn't cut play ${i + 1}`);
+          data = await ff.readFile(out);
+          await ff.deleteFile(out);
+        } catch (e) {
+          if (attempt || stopped) throw e;        // already tried a fresh one: it is not memory
+          say(`Restarting the clip cutter and trying clip ${i + 1} again…`);
+          try { ff.terminate(); } catch (e2) {}
+          ff = await startFF();
+        }
+      }
+      if (data === null) break;                   // stopped mid-retry
       if (dir) {
         const w = await (await dir.getFileHandle(name, {create: true})).createWritable();
         await w.write(data); await w.close();
