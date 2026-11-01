@@ -311,6 +311,22 @@ both teams formed into two rows a yard apart. That is not the "how spread out ar
 test that failed twice — it is whether the lumps split into two tight lines with a gap.
 It needs about 640×360 to resolve the gap; at 320×180 the two rows merge.
 
+**Tried, and it fails — the measurement runs backwards.** `scratchpad/lines.js` finds the
+lumps at 640×360, sorts them dark shirt / light shirt by brightness, and sweeps for the
+straight line that best divides one team from the other. Snaps score 0.84–1.00 (median
+0.96); junk scores 0.80–1.00 (median 0.94). The same picture, twice over.
+
+The reason is worth keeping, because it is the opposite of the intuition. **Two teams are
+easiest to separate when they are furthest apart** — in a huddle, or with the camera on
+one bench, a line divides them trivially and the score is a perfect 1.00. At the line of
+scrimmage the two teams are *interleaved* a yard apart, which is the hardest case of all.
+Separability measures how far apart the teams are, not whether they are facing off. On
+top of that the measurement cannot be made at all on **8 of 32 snaps and 9 of 25 junk
+clips**, where too few lumps of one colour survive the turf test to judge by.
+
+That closes the last of the geometric ideas. Counting the men is still the only thing in
+this file that works.
+
 ## The ball itself is visible — the best lead in the project
 
 The owner's son was right and the first write-up above was wrong to settle for "the
