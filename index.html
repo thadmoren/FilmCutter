@@ -165,7 +165,7 @@
 <div class="wrap film">
   <h1>🎬 Film Cutter</h1>
   <div class="sub">Open a full game — get every play, with the dead time cut out.
-    <span class="ver">v2026.11.1.11</span></div>
+    <span class="ver">v2026.11.1.12</span></div>
   <div class="family">Same family as <a href="../FormationDrawer/">🏈 Formation Drawer</a></div>
 
     <p class="film-note">Turns a full game into one video per play, from 5 s before the snap to 5 s after
@@ -287,16 +287,25 @@ const AD_MEN = 2, AD_RUN = 5;
 // inside live play — huddles, the walk-up, milling about between downs. Measured on the
 // 3h19m game against all 222 clips judged by eye.
 //
-// AI_CONF was 0.90 — the lossless bar, 46 of 97 junk clips off and not one of the 125
-// snaps. The owner has now chosen the other end of that trade, asked directly and with the
-// measured cost in front of him: "there should be no clips that are penalty walk offs,
-// timeouts or pregame, halftime." At 0 every clip the model calls not-football goes, which
-// on the labelled game is **96 of 97 junk caught and 9 of 125 real plays lost** — about one
-// play in fourteen. Nothing is deleted, "Keep all" brings it all back, and the shaky drops
-// are marked (see AI_SURE) so they can be rescued one click at a time. To go back to
-// lossless, put this to 0.90; 0.80 is the middle setting (73 of 97 junk, 2 plays lost).
+// **0.80, and the journey there is the lesson.** It was 0.90 (lossless on the labelled
+// game). The owner asked for every penalty, timeout and halftime clip gone, was shown the
+// measured cost — 96 of 97 junk caught against 9 of 125 real plays lost — and chose 0.
+// Then he actually reviewed his own film and found real plays thrown out, one after
+// another: #21, #29, #30, #34, #41, #93, #113.
+//
+// **The reason is that this model is far less certain on this film than on the labelled
+// one**, and the old game's thresholds do not carry over. Of 81 not-football calls on
+// Puyallup only **12 are at 0.90 or above**; the rest spread 23 at 0.60-0.69, 25 at
+// 0.70-0.79, 21 at 0.80-0.89. It even calls real plays "a play" at 0.62. At 1280x720 the
+// players are half the size they were on the 1920x1080 film and it is guessing more.
+//
+// The clip count is the check that needed no labels: a high-school game is 120-140 plays,
+// and at 0 this film kept **117** — fewer than the game can possibly contain, so plays were
+// going. 0.80 keeps 165 and, measured against his own reports, keeps every clip he named.
+// 0.90 keeps 186. 0.75 (152) also keeps his list and is the next step if 165 is too much
+// junk. Below 0.75 it starts eating plays on this film whatever it did on the other one.
 const AI_MODEL = "claude-opus-5-5";
-const AI_CONF = 0;                 // set aside anything the model calls not-football
+const AI_CONF = 0.80;              // set aside junk the model is at least this sure of
 // The old AI_CONF, kept as the bar for *marking*. A clip dropped below this is one the
 // model was not sure about, and now that everything gets dropped, that is exactly what is
 // worth showing him: the `?` is no longer "have a look at this one you kept", it is "this
