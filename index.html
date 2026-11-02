@@ -139,8 +139,19 @@
     width:17px; height:17px; border-radius:50%; background:var(--warn); color:var(--bg);
     font-size:.72rem; font-weight:700; line-height:17px; text-align:center; pointer-events:none; }
   .pick figure.off { border-color:var(--err); }
-  #fRev { margin:10px 0; padding:10px; border:1px solid var(--border); border-radius:10px; background:var(--panel); }
-  #fRevVid { width:100%; max-height:52vh; border-radius:8px; display:block; background:#000; }
+  /* The player sits BESIDE the grid, not under it. Sending him down the page to the main
+     video lost his place — "it scrolls down and then I can't remember what clip I clicked".
+     Sticky, so it stays put while he scrolls the grid; the grid has its own scrollbar. */
+  #fStage { display:flex; gap:10px; align-items:flex-start; }
+  #fStage > .pick { flex:1 1 auto; min-width:0; }
+  #fRev { flex:0 0 46%; position:sticky; top:8px; padding:10px;
+    border:1px solid var(--border); border-radius:10px; background:var(--panel); }
+  #fRevVid { width:100%; max-height:40vh; border-radius:8px; display:block; background:#000; }
+  @media (max-width:700px) { #fStage { display:block; } #fRev { margin-bottom:10px; } }
+  /* which tile is on the screen right now — the other half of not losing your place. A
+     border and an outline, not a ::after label, because .off already owns ::after. */
+  .pick figure.playing { border-color:var(--border-focus);
+    outline:2px solid var(--border-focus); outline-offset:1px; }
   .revbar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:8px; }
   .revbar .hint { flex:1; min-width:10em; }
   #fRevKeep { background:var(--ok); }
@@ -154,7 +165,7 @@
 <div class="wrap film">
   <h1>🎬 Film Cutter</h1>
   <div class="sub">Open a full game — get every play, with the dead time cut out.
-    <span class="ver">v2026.11.1.10</span></div>
+    <span class="ver">v2026.11.1.11</span></div>
   <div class="family">Same family as <a href="../FormationDrawer/">🏈 Formation Drawer</a></div>
 
     <p class="film-note">Turns a full game into one video per play, from 5 s before the snap to 5 s after
@@ -186,6 +197,7 @@
       <!-- Watching beats looking: three stills cannot tell a snap from players standing
            about, which is the whole reason the owner could not judge the ringed ones. Its
            own <video>, not the page's, so it never fights the scan or the thumbnails. -->
+      <div id="fStage">
       <section id="fRev" hidden>
         <video id="fRevVid" playsinline muted></video>
         <div class="revbar">
@@ -201,6 +213,7 @@
         <div class="hint">Keys: <b>K</b> keep · <b>D</b> drop · <b>←</b> <b>→</b> move · <b>Esc</b> finish. The clip repeats.</div>
       </section>
       <div id="fPick" class="pick"></div>
+      </div>
     </section>
     <details id="fMore" hidden>
       <summary>Review plays and add formation calls (optional)</summary>
@@ -895,6 +908,7 @@ function renderPick() {
     if (only && !q) return;
     const fig = document.createElement("figure");
     fig.tabIndex = 0;
+    fig.dataset.i = i;                 // so the player can find its own tile again
     fig.title = q ? (p.off ? "Claude dropped this but wasn't sure. Click to keep it."
                            : "Claude suspects this isn't football. Click to drop it.")
                   : "Click to drop this one";
@@ -922,11 +936,9 @@ function renderPick() {
     // the tooltip, because it is still how he names a clip when something is wrong with it.
     b.textContent = `${Math.round(p.e - p.s)}s ▶`;
     b.title = `Watch this one — starts at ${fmt(p.s).replace(/\.\d$/, "")}`;
-    b.addEventListener("click", e => {
-      e.stopPropagation();
-      fMore.open = true; goTo(i, true);
-      fMore.scrollIntoView({block: "nearest"});
-    });
+    // Play it right here, beside the grid. This used to open the folded review panel and
+    // scroll the page down to the main video, which cost him his place in 200 tiles.
+    b.addEventListener("click", e => { e.stopPropagation(); openRevAt(i); });
     cap.append(a, b); fig.appendChild(cap);
     const toggle = () => {
       p.off = !p.off; edited = true;
@@ -1234,6 +1246,18 @@ function showRev(k) {
     : "Claude hasn't judged this one.";
   fRevVid.currentTime = p.s;
   fRevVid.play().catch(() => {});
+  markPlaying(revList[revAt]);
+}
+// Mark the tile on screen and bring it into view inside the grid's own scroller, so after
+// watching he can still see which one he was looking at.
+function markPlaying(i) {
+  [...fPick.children].forEach(f => f.classList && f.classList.remove("playing"));
+  const fig = fPick.querySelector(`figure[data-i="${i}"]`);
+  if (!fig) return;
+  fig.classList.add("playing");
+  if (fig.offsetTop < fPick.scrollTop ||
+      fig.offsetTop + fig.offsetHeight > fPick.scrollTop + fPick.clientHeight)
+    fPick.scrollTop = fig.offsetTop - fPick.clientHeight / 3;
 }
 // loop the clip rather than run on into the next play
 fRevVid.addEventListener("timeupdate", () => {
@@ -1246,19 +1270,31 @@ function judgeRev(keep) {
   if (p) {
     p.off = !keep; if (keep) delete p.off;
     edited = true; save(); renderPlays(); countPick(); drawTl();
-    const fig = fPick.children[fDoubtOnly.checked ? revAt : revList[revAt]];
-    if (fig && fig.tagName === "FIGURE") fig.classList.toggle("off", !keep);
+    const fig = fPick.querySelector(`figure[data-i="${revList[revAt]}"]`);
+    if (fig) fig.classList.toggle("off", !keep);
   }
   if (revAt >= revList.length - 1) { closeRev(); say("That's the lot. Cut into clips when you're ready."); }
   else showRev(revAt + 1);
 }
-function openRev() {
+function openRev(startAt) {
   revList = revSet();
   if (!revList.length || !fUrl) return;
   if (fRevVid.src !== fUrl) fRevVid.src = fUrl;
   fRev.hidden = false;
   fRev.scrollIntoView({block: "nearest"});
-  showRev(0);
+  showRev(startAt || 0);
+}
+// Opened from one tile's ▶. It still lands in the full list, so the arrows walk on to the
+// neighbours from wherever he started rather than dead-ending on one clip.
+function openRevAt(i) {
+  const all = plays.map((_, k) => k);
+  revList = revSet();
+  let at = revList.indexOf(i);
+  if (at < 0) { revList = all; at = i; }      // the filter is hiding it; show it anyway
+  if (!fUrl) return;
+  if (fRevVid.src !== fUrl) fRevVid.src = fUrl;
+  fRev.hidden = false;
+  showRev(at);
 }
 function closeRev() {
   fRev.hidden = true; fRevVid.pause();
