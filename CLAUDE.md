@@ -542,6 +542,51 @@ have them: the **scorebug** (it may be absent, or present but not live) and the
 **audio** (it may be missing). Anything built on either is dead on arrival, whatever it
 scores on this one film.
 
+## Commercials — the second hand-made rule that works
+
+The owner said it in his first breath about the Puyallup film — *"there were commercials in
+this film too that confused it a bit"* — and the first investigation here **dismissed it**,
+having measured the wrong thing (the holes where plays were missing, which really were
+football). It took him finding a bad clip and naming it, *"the one at 17:15"*, to go and
+look: **17:23–17:51 is an NFHS Network advert**, clip #21 of his game was the advert, and
+clip #20 ran its entire tail into it. Take the owner's description of his own film
+seriously; he watches it and this does not.
+
+**They are nothing like the black sponsor card** the `dark` rule catches. A local advert is
+bright, busy and cut fast, so it scores enormous motion — 159 to 845 against a film median
+of 43 — and reads as the best play in the game. Brightness does not separate it either: the
+ad runs `lum` 53–124 against football's 123–132, nowhere near the `min(40, median/2)` black
+line.
+
+**What gives them away is already being recorded: nobody is standing on a field.** Through
+that advert `men` is 0–2; football either side is 20–37. So an advert is `men <= AD_MEN` (2)
+for a run of `AD_RUN` (5) seconds, and those seconds join replay and black in `brk` — no
+play grows across one, a clip's tail stops at one, and a lead-in will not reach back through
+one. The second *after* an advert is a break too, because its motion is only the cut back to
+the picture (841 at 17:54).
+
+**The run is the whole safety of it, for a reason this file already recorded from the other
+side**: a snap ends in a pile, the lumps merge, and `men` drops to zero — "the head count
+falling to zero (+1.28)" is the strongest single feature the fitted model found, *for* a
+play. One second at zero is a tackle. Five in a row is a commercial.
+
+**Checked, not assumed**: 12 of the 39 flagged stretches were sampled across the game and
+every frame looked at. All 12 were adverts — a gym, a financial adviser, a drug PSA, a
+college, a credit union, the NFHS promo — and **none was football**. 39 stretches, about 13
+minutes of a 2 h 43 m broadcast, which is the right order for a streamed high-school game.
+
+Guarded by the same `MEN_MIN` median as the head count: on a film that never shows a field
+full of players this would swallow everything, and **the synthetic test films score zero men
+throughout** — they still return all 10 plays, which is the test that matters. Old film:
+unchanged at 378 clips, so that broadcast's breaks were already covered by replay and black.
+
+**`c.s` is clamped to `f - PRE`: a clip may never open after its own action has started.**
+Clip #21 began at 17:47 with its foot at 17:35 — twelve seconds of the play already gone —
+because the clip before it ran to 17:47 and the lead-in pass clamps to the clip before.
+Once clips split that clamp can land past the foot. Overlapping the previous clip by a few
+seconds costs nothing (they are separate files); opening late costs the play. Old film: 0
+clips now open late, against 0 labelled plays lost.
+
 ## The down marker: a live lead, first measurement only
 
 The owner, 2026-11-01: *"you can read the down marker to know you need a play? it can't go

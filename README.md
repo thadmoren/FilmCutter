@@ -110,9 +110,15 @@ The key is kept in your browser and sent only to Anthropic. Your film is never u
 only three small still pictures per clip. Leave the button alone and the app behaves
 exactly as before, with no account and no bill.
 
-**Replays** (the red "replay" badge in the top-right corner, as on NFHS Network film)
-and **black screens** (the sponsor card either side of a replay, or an ad break) are
+**Replays** (the red "replay" badge in the top-right corner, as on NFHS Network film),
+**black screens** (the sponsor card either side of a replay) and **commercials** are
 skipped, and a play's clip stops where one begins.
+
+It spots a commercial by noticing that **nobody is standing on a field** for several seconds
+running — adverts are bright and busy and otherwise look like the liveliest play of the
+game. One second with nobody visible is just a pile of players after a tackle, so it takes
+five in a row. On a streamed game that's usually around a dozen minutes of adverts found and
+left out.
 
 About the clips: picking a folder needs Chrome or Edge on a computer; other browsers
 download the clips one by one. Clips are cut without re-encoding, so it takes seconds
