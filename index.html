@@ -165,7 +165,7 @@
 <div class="wrap film">
   <h1>🎬 Film Cutter</h1>
   <div class="sub">Open a full game — get every play, with the dead time cut out.
-    <span class="ver">v2026.11.1.12</span></div>
+    <span class="ver">v2026.11.1.13</span></div>
   <div class="family">Same family as <a href="../FormationDrawer/">🏈 Formation Drawer</a></div>
 
     <p class="film-note">Turns a full game into one video per play, from 5 s before the snap to 5 s after
@@ -269,17 +269,22 @@ const PLAY_LO = 5, PLAY_HI = 3;    // seconds a bump must last to be a play, acr
 // stale one is re-detected from the samples it already has — no rescan, it is instant —
 // because otherwise the owner's finished games keep the old rule for ever and the only
 // way out is a slider buried in a folded-away panel. See PLAY_LO above for why this exists.
-const DET_VER = 6;
+const DET_VER = 7;
 // How far back to reach for the huddle breaking. PRE alone opens on the teams already set;
 // the owner wants the call and the walk-up: "these clips… don't show huddle breaks". Applied
 // as a second pass once the clips are settled, so it can never glue two plays together.
 const LEAD = 12;
-// Two bumps this far apart (foot to foot) are two plays and get a clip each; closer than
-// this is one play the detector found twice. The owner's call on his own film, asked
-// directly: his offence gets to the line fast, so 8-14 s really is two snaps there. The
-// old film's labelled snaps never came closer than 17 s, so this is the looser of the two
-// readings — if a long play ever comes back cut in half, this is the number to raise.
-const SPLIT = 10;
+// Seconds of quiet between one bump ENDING and the next one starting. Less than this and
+// they are one play; more and they are two, and each gets its own clip.
+//
+// This was foot-to-foot and that was wrong. Asked how close two snaps can be, the owner
+// said 8-14 s, so foot-to-foot at 10 looked right — and then it sawed real plays in half
+// (#29/#30, #142, #181). Foot-to-foot cannot work: it measures from the START of one play
+// to the start of the next, so a long play and a short gap look identical to a short play
+// and a long gap. Measured end-to-foot on his film the two cases separate cleanly:
+// **halves of one play 13 s or less, genuinely separate plays 18 s or more**, with nothing
+// in between. Which is obvious in hindsight — between two real snaps there is a huddle.
+const SPLIT = 12;
 // An advert: this few men on the grass, for this many seconds running. See the long note
 // in detect() — one second at zero is a pile of players, five in a row is a commercial.
 const AD_MEN = 2, AD_RUN = 5;
@@ -301,11 +306,17 @@ const AD_MEN = 2, AD_RUN = 5;
 //
 // The clip count is the check that needed no labels: a high-school game is 120-140 plays,
 // and at 0 this film kept **117** — fewer than the game can possibly contain, so plays were
-// going. 0.80 keeps 165 and, measured against his own reports, keeps every clip he named.
-// 0.90 keeps 186. 0.75 (152) also keeps his list and is the next step if 165 is too much
-// junk. Below 0.75 it starts eating plays on this film whatever it did on the other one.
+// going. Then 0.80 was tried, and **that was not enough either**: of the ten clips he named
+// as real plays, #41 was dropped at 0.80 and #60 at 0.85. **Only 0.90 keeps all ten.**
+//
+// So it is back where it started, and the excursion is the evidence: on this film the
+// model's confidence is simply not calibrated well enough to act on below 0.90, and the
+// 0.80 "middle setting" measured on the old game does not transfer. It removes 12 clips
+// here rather than 46. **The junk he wants gone is mostly not removable without losing
+// plays** — that is the honest state of it, and it is what this file said before the
+// threshold was ever moved. Do not move it again without labels for the film in hand.
 const AI_MODEL = "claude-opus-5-5";
-const AI_CONF = 0.80;              // set aside junk the model is at least this sure of
+const AI_CONF = 0.90;              // set aside junk the model is at least this sure of
 // The old AI_CONF, kept as the bar for *marking*. A clip dropped below this is one the
 // model was not sure about, and now that everything gets dropped, that is exactly what is
 // worth showing him: the `?` is no longer "have a look at this one you kept", it is "this
@@ -701,7 +712,7 @@ function detect() {
   // set and the ball go — and POST after the whistle. It cannot start before the
   // previous play finished.
   const out = [];
-  let lastFoot = -1e9;                  // foot of the last bump taken into a clip
+  let lastEnd = -1e9;                   // end of the last bump taken into a clip
   cores.forEach((g, k) => {
     const floor = Math.max(0, k ? cores[k - 1].e + POST : 0);
     let s = Math.max(floor, g.s - PRE);
@@ -728,9 +739,9 @@ function detect() {
     // the lead-in in front of it is no longer a fixed PRE, so `s + PRE` stops being the
     // snap. Everything that wants the snap (the picker's three frames, the AI pass, the
     // head count) reads `f`, not the clip start.
-    if (p && s - p.e <= JOIN && g.s - lastFoot < SPLIT) p.e = Math.max(p.e, e);
+    if (p && g.s - lastEnd < SPLIT) p.e = Math.max(p.e, e);
     else out.push({s, e, f: g.s, call: ""});
-    lastFoot = g.s;
+    lastEnd = g.e;
   });
   // Reach further back, to the huddle breaking. This is a SECOND pass, run after the clips
   // and their joins are settled, and that ordering is the whole safety of it: extending a
