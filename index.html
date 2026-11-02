@@ -154,7 +154,7 @@
 <div class="wrap film">
   <h1>🎬 Film Cutter</h1>
   <div class="sub">Open a full game — get every play, with the dead time cut out.
-    <span class="ver">v2026.11.1.9</span></div>
+    <span class="ver">v2026.11.1.10</span></div>
   <div class="family">Same family as <a href="../FormationDrawer/">🏈 Formation Drawer</a></div>
 
     <p class="film-note">Turns a full game into one video per play, from 5 s before the snap to 5 s after
@@ -917,8 +917,11 @@ function renderPick() {
     const a = document.createElement("span"); a.textContent = i + 1;
     const b = document.createElement("button");   // check a doubtful one without dropping it
     b.type = "button"; b.className = "go";
-    b.textContent = fmt(p.s).replace(/\.\d$/, "") + " ▶";
-    b.title = "Watch this one";
+    // How long it is, not where it is: scanning the grid, the length is what tells a
+    // sensible clip from a 50 s one that has run into something. The timestamp moves to
+    // the tooltip, because it is still how he names a clip when something is wrong with it.
+    b.textContent = `${Math.round(p.e - p.s)}s ▶`;
+    b.title = `Watch this one — starts at ${fmt(p.s).replace(/\.\d$/, "")}`;
     b.addEventListener("click", e => {
       e.stopPropagation();
       fMore.open = true; goTo(i, true);
@@ -1224,8 +1227,8 @@ function showRev(k) {
   const p = plays[revList[revAt]];
   if (!p) return closeRev();
   const a = aiSaid.get(snapAt(p));
-  fRevNum.textContent = `${revAt + 1} of ${revList.length} · ${fmt(p.s).replace(/\.\d$/, "")} · ` +
-    (p.off ? "dropped" : "kept");
+  fRevNum.textContent = `${revAt + 1} of ${revList.length} · clip ${revList[revAt] + 1} · ` +
+    `${fmt(p.s).replace(/\.\d$/, "")} · ${Math.round(p.e - p.s)}s · ` + (p.off ? "dropped" : "kept");
   fRevWhy.textContent = a
     ? `Claude: ${a.play ? "a play" : "not football"}, ${Math.round(a.confidence * 100)}% sure`
     : "Claude hasn't judged this one.";
