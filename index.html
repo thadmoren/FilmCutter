@@ -151,7 +151,7 @@
 <div class="wrap film">
   <h1>🎬 Film Cutter</h1>
   <div class="sub">Open a full game — get every play, with the dead time cut out.
-    <span class="ver">v2026.11.1.5</span></div>
+    <span class="ver">v2026.11.1.6</span></div>
   <div class="family">Same family as <a href="../FormationDrawer/">🏈 Formation Drawer</a></div>
 
     <p class="film-note">Turns a full game into one video per play, from 5 s before the snap to 5 s after
@@ -234,7 +234,11 @@ const PLAY_LO = 5, PLAY_HI = 3;    // seconds a bump must last to be a play, acr
 // stale one is re-detected from the samples it already has — no rescan, it is instant —
 // because otherwise the owner's finished games keep the old rule for ever and the only
 // way out is a slider buried in a folded-away panel. See PLAY_LO above for why this exists.
-const DET_VER = 3;
+const DET_VER = 4;
+// How far back to reach for the huddle breaking. PRE alone opens on the teams already set;
+// the owner wants the call and the walk-up: "these clips… don't show huddle breaks". Applied
+// as a second pass once the clips are settled, so it can never glue two plays together.
+const LEAD = 12;
 // Asking a vision model whether a clip is football is the only thing that reaches the junk
 // inside live play — huddles, the walk-up, milling about between downs. Measured on the
 // 3h19m game against all 222 clips judged by eye: at AI_CONF it drops 46 clips and loses
@@ -623,7 +627,25 @@ function detect() {
     // plays: real plays sit 25-40 s apart, so anything that butts up against the one
     // before is the same stretch of action chopped in half. JOIN seconds of slack
     // covers the gap a clip's own lead-in and tail leave behind.
-    if (p && s - p.e <= JOIN) p.e = Math.max(p.e, e); else out.push({s, e, call: ""});
+    // `f` is the foot of the bump — where the action starts. It is kept on the play because
+    // the lead-in in front of it is no longer a fixed PRE, so `s + PRE` stops being the
+    // snap. Everything that wants the snap (the picker's three frames, the AI pass, the
+    // head count) reads `f`, not the clip start.
+    if (p && s - p.e <= JOIN) p.e = Math.max(p.e, e); else out.push({s, e, f: g.s, call: ""});
+  });
+  // Reach further back, to the huddle breaking. This is a SECOND pass, run after the clips
+  // and their joins are settled, and that ordering is the whole safety of it: extending a
+  // lead-in before the join test would make clips butt into each other and JOIN would weld
+  // two plays into one, which is how plays get lost. Here a clip simply takes whatever room
+  // is left between it and the one before, and no more. Measured on the Puyallup game:
+  // 193 clips at every LEAD from 4 to 18, none gained, none lost; at 12, 145 of 193 get the
+  // full reach and the rest take what room there is.
+  out.forEach((c, k) => {
+    const room = k ? out[k - 1].e : 0;
+    let s = Math.max(room, c.f - LEAD, 0);
+    for (let i = Math.round(s / STEP); i < c.f / STEP; i++)   // same replay guard as above
+      if (brk[i] && c.f - (i + 1) * STEP >= PRE) s = (i + 1) * STEP;
+    c.s = Math.min(c.s, s);
   });
   // Nobody out on the grass, nobody playing football. Counting men standing in turf at
   // the snap is the one thing found that tells football from the camera on a banner, an
@@ -637,7 +659,7 @@ function detect() {
   // A stretch of MEN_RUN in a row with nobody out there is halftime or the end of the
   // game, and that is what gets set aside.
   if (men.length) {
-    const head = out.map(p => men[Math.max(0, Math.round((p.s + PRE) / STEP) - 1)] || 0);
+    const head = out.map(p => men[Math.max(0, Math.round((p.f != null ? p.f : p.s + PRE) / STEP) - 1)] || 0);
     const mid = [...head].sort((a, b) => a - b)[head.length >> 1] || 0;
     if (mid >= MEN_MIN) {
       const bare = head.map(v => v < mid * MEN_FRAC);
@@ -745,7 +767,11 @@ const tiles = new Map();                 // second -> [{shot, k}] the tiles and 
 let thumbRun = 0;                        // bumped to call off a fill already running
 
 const kept = () => plays.filter(p => !p.off);
-const snapAt = p => Math.max(0, Math.round(p.s + PRE));   // the ball goes about here
+// The foot of the bump — the ball goes about here. Kept on the play as `f`, because the
+// lead-in in front of it varies now (it reaches back to the huddle break where there is
+// room), so the old `s + PRE` would point at the huddle instead of the snap. Plays stored
+// by an older version have no `f` and fall back to it.
+const snapAt = p => Math.max(0, Math.round(p.f != null ? p.f : p.s + PRE));
 // One frame is not enough to tell a snap from a huddle — the owner said as much of the
 // old picker, and labelling all 236 clips proved it (a still of players walking about
 // reads as a play). These three are the set the labelling used: the ball going, the play
@@ -996,8 +1022,25 @@ async function aiPass() {
   if (scanning || !fv.duration || !plays.length) return;
   const key = aiKey();
   if (!key) return;
+  // Setting the clips aside is separate from asking about them, because the answers now
+  // outlive the page. A film re-detected after an update comes back with no clips set
+  // aside but every answer still in hand; the old code returned here and cut all of them,
+  // silently undoing Claude's work and making the owner pay again to get it back.
+  const setAside = () => {
+    let off = 0;
+    for (const p of plays) {
+      const a = aiSaid.get(snapAt(p));
+      if (a && !a.play && a.confidence >= AI_CONF && !p.off) { p.off = true; off++; }
+    }
+    if (off) { edited = true; save(); renderPlays(); renderPick(); drawTl(); countPick(); }
+    return off;
+  };
   const todo = plays.filter(p => !aiSaid.has(snapAt(p)));
-  if (!todo.length) return;
+  if (!todo.length) {
+    const off = setAside();
+    if (off) say(`Claude set aside ${off} clip${off === 1 ? "" : "s"} it had already judged. "Keep all" brings them back.`);
+    return;
+  }
   const run = ++aiRun;
   thumbRun++;                                      // the thumbnails must let go of the video
   const back = fv.currentTime, note = fMsg.textContent;
@@ -1041,11 +1084,7 @@ async function aiPass() {
     fv.currentTime = back;
   }
   // set aside only what it is sure about: below AI_CONF this starts costing real plays
-  let off = 0;
-  for (const p of plays) {
-    const a = aiSaid.get(snapAt(p));
-    if (a && !a.play && a.confidence >= AI_CONF && !p.off) { p.off = true; off++; }
-  }
+  const off = setAside();
   edited = true; save(); renderPlays(); renderPick(); drawTl(); countPick();
   // Say plainly what happened, and never let a silent failure look like a clean result:
   // "nothing was set aside" and "none of it worked" are very different things.

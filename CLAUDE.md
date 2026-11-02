@@ -160,6 +160,40 @@ missing the snap costs the clip. Old film **19 → 3** opening at the snap, same
 none of the 32 hand-labelled plays lost; Puyallup **6 → 4** (that broadcast carries few
 replay badges, which is why he saw it on the first game and not the second).
 
+**The lead-in reaches back to the huddle break (`LEAD` 12), in a second pass.** The owner,
+watching his first proper cut: *"these clips run too long at the end and don't show huddle
+breaks"* — he wants the call and the walk-up, not just the ball going. The ordering is the
+whole safety of it: **extend the lead-in only after the clips and their joins are settled.**
+Done before the join test, a longer lead-in makes every clip butt into the one before and
+`JOIN` welds two plays into one — the 160 s monsters the `JOIN` note warns about. Done
+after, a clip simply takes whatever room is left between it and its predecessor. Measured
+on Puyallup: **193 clips at every `LEAD` from 4 to 18, none gained, none lost**; at 12, 145
+of 193 get the full reach and the rest take what there is. Old film: 253 clips, 0 of 32
+hand-labelled plays lost. Clip length there runs longer (median 31 s) than on Puyallup
+(median 25 s) because that film merges more.
+
+**This is why plays now carry `f`.** The foot of the bump used to be recoverable as
+`p.s + PRE`, because the lead-in was always exactly `PRE`. It is not any more, so `snapAt()`
+would have pointed at the huddle instead of the snap — and `snapAt` is what picks the
+picker's three frames, the AI pass's three frames, and the head count's sample second. All
+three would have quietly moved off the play. `f` is the absolute foot, stored on the play
+and persisted; plays saved by an older version have none and fall back to `p.s + PRE`. Note
+this also fixes a pre-existing version of the same bug: a clip whose lead-in had been
+squeezed by a replay already had `s + PRE` past its own foot.
+
+**The long clips are not a tail problem and must not be trimmed.** He guessed they ran long
+at the end; measured, **12 of the 13 Puyallup clips over 40 s contain 2–4 bumps** — they are
+whole plays welded together by `JOIN`, not one play with a long tail. Cutting them back to a
+length limit would saw the last play off each one. This is the third time a clip-length rule
+has looked right and been wrong (see the `>35 s` and `>45 s` entries); the answer, if one is
+ever wanted, is to split merged clips, not to trim them.
+
+**`aiPass` must set clips aside even when it asks nothing.** Now that answers outlive the
+page, a film re-detected after an update comes back with every answer in hand and nothing
+set aside — and the old `if (!todo.length) return;` sat in front of the setting-aside loop,
+so the cut quietly included everything Claude had already rejected, and the only way back
+was to pay for the whole game again. Asking and setting aside are separate steps now.
+
 The 3–4 left per game are the *previous clip's* floor, not replays: a clip may not start
 before the one before it ended. Fixing those means letting a lead-in eat into the
 previous clip's `POST` tail, which makes the two overlap in time, which `JOIN` then

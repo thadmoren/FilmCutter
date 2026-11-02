@@ -47,9 +47,16 @@ with under fifty is suspect — **push Sensitivity to the right.** It re-finds t
 straight away, with no rescan. (When the play finder itself improves, a game you've
 already scanned picks the change up by itself the next time you open it, and says so.)
 
-Each clip starts **five seconds before the snap**, so you see the teams set and the ball
-go, and ends five seconds after the whistle. If a replay has been cut in right before the
-snap, the lead-in will show a second or two of it rather than give up and start late.
+Each clip reaches back to **the huddle breaking** where there's room for it — so you see the
+call, the walk-up and the formation, not just the ball going — and ends five seconds after
+the whistle. Where the play before was close, the clip takes whatever room is left rather
+than running into it; clips are never glued together to make the lead-in fit. If a replay
+has been cut in right before the snap, the lead-in will show a second or two of it rather
+than give up and start late.
+
+A clip that runs much longer than the rest is usually **two or three plays in a row** that
+ran together, not one play with a long tail. They're left whole on purpose: trimming them
+to a tidy length would cut the last play off the end.
 
 It also **counts the players out on the grass**. Football means a dozen or more men
 standing on turf; a banner, an empty field, the team lined up along the touchline at
