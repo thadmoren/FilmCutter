@@ -898,6 +898,21 @@ snap second). It was in memory only, so closing the tab threw away a judgement o
 in the game — about $1.50 — and the next cut paid for it again. CLAUDE.md claimed "a second
 cut of the same game goes straight through"; that was only true within one page load.
 
+**Watching beats looking, and the picker finally admits it.** The owner, sent to review 60
+shaky drops: *"I can't really see the ringed ones, three stills are not enough for me."* He
+is right and this file says so twice already — a still cannot tell a snap from players
+standing about, and three frames still left 14 of 236 unresolved when the clips were
+labelled by hand. More frames was never the answer; **motion** is. `#fRev` plays each clip
+at full speed on repeat with one button each way (keep / drop, or `K` / `D`, `←` `→`, `Esc`),
+walking the set the picker is currently showing — the ringed ones with the filter on, the
+whole game with it off.
+
+It has **its own `<video>` on the same object URL**, deliberately. `fv` is seeked by the
+scan, by `fillThumbs` and by `aiPass`, and every contention bug in this file came from
+sharing it; a second element costs nothing and cannot collide. The clip repeats because
+`timeupdate` seeks back to `p.s` on reaching `p.e` — without that it runs on into the next
+play and he is judging the wrong football.
+
 The owner still gets the last word on what is left. After the finder runs, `#fPick` shows
 **three frames across each play, cycling** — at `PRE + SHOTS` (2, 6, 10 s), the same set
 the labelling used — and clicking a tile drops it. It was one still per play until

@@ -139,6 +139,11 @@
     width:17px; height:17px; border-radius:50%; background:var(--warn); color:var(--bg);
     font-size:.72rem; font-weight:700; line-height:17px; text-align:center; pointer-events:none; }
   .pick figure.off { border-color:var(--err); }
+  #fRev { margin:10px 0; padding:10px; border:1px solid var(--border); border-radius:10px; background:var(--panel); }
+  #fRevVid { width:100%; max-height:52vh; border-radius:8px; display:block; background:#000; }
+  .revbar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:8px; }
+  .revbar .hint { flex:1; min-width:10em; }
+  #fRevKeep { background:var(--ok); }
   .pick figure.off img, .pick figure.off .ph { opacity:.25; }
   .pick figure.off figcaption { color:var(--err); }
   .pick figure.off::after { content:"dropped"; position:absolute; inset:0; display:grid; place-items:center;
@@ -149,7 +154,7 @@
 <div class="wrap film">
   <h1>🎬 Film Cutter</h1>
   <div class="sub">Open a full game — get every play, with the dead time cut out.
-    <span class="ver">v2026.11.1.7</span></div>
+    <span class="ver">v2026.11.1.8</span></div>
   <div class="family">Same family as <a href="../FormationDrawer/">🏈 Formation Drawer</a></div>
 
     <p class="film-note">Turns a full game into one video per play, from 5 s before the snap to 5 s after
@@ -175,8 +180,26 @@
           Click any you don't want — or any dropped one you want back. A <b>?</b> is a call Claude wasn't sure about,
           so check those: that's where a real play gets thrown out.</span>
         <label class="chk" id="fDoubtWrap" hidden><input type="checkbox" id="fDoubtOnly"> <span id="fDoubtLab"></span></label>
+        <button class="sm" id="fRevStart" type="button">Watch them</button>
         <button class="sm" id="fPickAll" type="button">Keep all</button>
       </div>
+      <!-- Watching beats looking: three stills cannot tell a snap from players standing
+           about, which is the whole reason the owner could not judge the ringed ones. Its
+           own <video>, not the page's, so it never fights the scan or the thumbnails. -->
+      <section id="fRev" hidden>
+        <video id="fRevVid" playsinline muted></video>
+        <div class="revbar">
+          <strong id="fRevNum"></strong>
+          <span class="hint" id="fRevWhy"></span>
+        </div>
+        <div class="revbar">
+          <button class="sm" id="fRevPrev" type="button">‹ Back</button>
+          <button id="fRevKeep" type="button">It's a play — keep</button>
+          <button class="sm" id="fRevDrop" type="button">Not football — drop</button>
+          <button class="sm" id="fRevClose" type="button">Done</button>
+        </div>
+        <div class="hint">Keys: <b>K</b> keep · <b>D</b> drop · <b>←</b> <b>→</b> move · <b>Esc</b> finish. The clip repeats.</div>
+      </section>
       <div id="fPick" class="pick"></div>
     </section>
     <details id="fMore" hidden>
@@ -820,6 +843,7 @@ function countPick() {
   const d = plays.filter(unsure).length;
   fDoubtLab.textContent = `Only Claude's shaky calls (${d})`;
   fDoubtWrap.hidden = !d && !fDoubtOnly.checked;
+  countRev();
 }
 function renderPick() {
   tiles.clear(); fPick.innerHTML = "";
@@ -1131,7 +1155,84 @@ fPickAll.addEventListener("click", () => {        // undo the lot and start agai
 });
 // Show only the ringed ones. On a whole game that is fifty tiles instead of two hundred,
 // which is the difference between a job he will do and one he won't.
-fDoubtOnly.addEventListener("change", () => { renderPick(); fillThumbs(); });
+fDoubtOnly.addEventListener("change", () => { renderPick(); fillThumbs(); countRev(); });
+
+/* --- watching them, which is the only way to judge one ---------------------------- */
+// "I can't really see the ringed ones, three stills are not enough for me." He is right,
+// and this file already says so twice: a still cannot tell a snap from players standing
+// about, and even three frames left 14 of 236 unresolved when the clips were labelled by
+// hand. So play the film. Its own <video> element on the same object URL, because `fv` is
+// busy being seeked by the scan, the thumbnails and the AI pass, and sharing it caused
+// every contention bug in this file.
+const fRev = document.getElementById("fRev");
+const fRevVid = document.getElementById("fRevVid");
+const fRevNum = document.getElementById("fRevNum");
+const fRevWhy = document.getElementById("fRevWhy");
+const fRevStart = document.getElementById("fRevStart");
+let revList = [], revAt = 0;
+
+// whatever the picker is showing: the ringed ones when the filter is on, else everything
+const revSet = () => plays.map((p, i) => i).filter(i => !fDoubtOnly.checked || unsure(plays[i]));
+function countRev() {
+  const n = revSet().length;
+  fRevStart.textContent = fDoubtOnly.checked ? `Watch the ${n} shaky ones` : "Watch them";
+  fRevStart.disabled = !n;
+}
+function showRev(k) {
+  if (!revList.length) return closeRev();
+  revAt = Math.max(0, Math.min(revList.length - 1, k));
+  const p = plays[revList[revAt]];
+  if (!p) return closeRev();
+  const a = aiSaid.get(snapAt(p));
+  fRevNum.textContent = `${revAt + 1} of ${revList.length} · ${fmt(p.s).replace(/\.\d$/, "")} · ` +
+    (p.off ? "dropped" : "kept");
+  fRevWhy.textContent = a
+    ? `Claude: ${a.play ? "a play" : "not football"}, ${Math.round(a.confidence * 100)}% sure`
+    : "Claude hasn't judged this one.";
+  fRevVid.currentTime = p.s;
+  fRevVid.play().catch(() => {});
+}
+// loop the clip rather than run on into the next play
+fRevVid.addEventListener("timeupdate", () => {
+  if (fRev.hidden) return;
+  const p = plays[revList[revAt]];
+  if (p && (fRevVid.currentTime >= p.e || fRevVid.currentTime < p.s - 1)) fRevVid.currentTime = p.s;
+});
+function judgeRev(keep) {
+  const p = plays[revList[revAt]];
+  if (p) {
+    p.off = !keep; if (keep) delete p.off;
+    edited = true; save(); renderPlays(); countPick(); drawTl();
+    const fig = fPick.children[fDoubtOnly.checked ? revAt : revList[revAt]];
+    if (fig && fig.tagName === "FIGURE") fig.classList.toggle("off", !keep);
+  }
+  if (revAt >= revList.length - 1) { closeRev(); say("That's the lot. Cut into clips when you're ready."); }
+  else showRev(revAt + 1);
+}
+function openRev() {
+  revList = revSet();
+  if (!revList.length || !fUrl) return;
+  if (fRevVid.src !== fUrl) fRevVid.src = fUrl;
+  fRev.hidden = false;
+  fRev.scrollIntoView({block: "nearest"});
+  showRev(0);
+}
+function closeRev() {
+  fRev.hidden = true; fRevVid.pause();
+  renderPick();              // the drops made in here show up in the grid
+}
+fRevStart.addEventListener("click", openRev);
+document.getElementById("fRevKeep").addEventListener("click", () => judgeRev(true));
+document.getElementById("fRevDrop").addEventListener("click", () => judgeRev(false));
+document.getElementById("fRevPrev").addEventListener("click", () => showRev(revAt - 1));
+document.getElementById("fRevClose").addEventListener("click", closeRev);
+document.addEventListener("keydown", e => {
+  if (fRev.hidden || e.metaKey || e.ctrlKey || e.target.closest("input, textarea")) return;
+  const k = {k: () => judgeRev(true), d: () => judgeRev(false),
+             ArrowRight: () => showRev(revAt + 1), ArrowLeft: () => showRev(revAt - 1),
+             Escape: closeRev}[e.key.length === 1 ? e.key.toLowerCase() : e.key];
+  if (k) { e.preventDefault(); e.stopPropagation(); k(); }
+});
 
 function setCur(i) {
   cur = i;

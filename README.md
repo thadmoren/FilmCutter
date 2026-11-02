@@ -94,10 +94,15 @@ can be changed; it's not a bug.
 
 **So check the ones with a ?.** Claude says how sure it is about each call, and any clip it
 dropped without being sure gets an amber ring and a **?**. That's where a real play gets
-thrown out. Tick **Only Claude's shaky calls** to see just those, and click any that is
-actually football to put it back. Nothing is ever deleted — **Keep all** brings back
-everything. Its answers are kept between visits, so closing the tab and cutting again costs
-nothing the second time.
+thrown out. Tick **Only Claude's shaky calls** to see just those. Nothing is ever deleted —
+**Keep all** brings back everything. Its answers are kept between visits, so closing the tab
+and cutting again costs nothing the second time.
+
+**Watch them** plays each one, full speed, on repeat, so you can actually see whether
+anything happens — pictures can't tell a snap from players standing about. One button each
+way: **It's a play — keep** or **Not football — drop**, and it moves to the next. Keys are
+**K** keep, **D** drop, **←** **→** to move about and **Esc** to finish. With the shaky-calls
+box ticked it walks you through just those; untick it and it walks the whole game.
 
 This one is optional and costs a little money, because it needs your own API key from
 [console.anthropic.com](https://console.anthropic.com) — about **$1.50 for a whole game**.
