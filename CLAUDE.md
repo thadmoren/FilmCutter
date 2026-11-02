@@ -478,6 +478,63 @@ have them: the **scorebug** (it may be absent, or present but not live) and the
 **audio** (it may be missing). Anything built on either is dead on arrival, whatever it
 scores on this one film.
 
+## The down marker: a live lead, first measurement only
+
+The owner, 2026-11-01: *"you can read the down marker to know you need a play? it can't go
+from 1st to 3rd"* — then, better: *"orange marker on field"*. Two separate ideas and the
+second is the good one.
+
+**Reading the down off the scorebug is dead on his second film.** The Puyallup broadcast's
+overlay is a wide bar carrying **team, score and quarter only** — no down, no distance, no
+game clock. (The quarter *is* live: 1st at 40 min, 2nd at 60, 3rd at 100. An earlier note
+here calling it stale was wrong.) The old Mount Si film *did* carry down and distance, which
+is how the labelling read penalties. So the same network, two films, two layouts, and the
+one he is cutting now has nothing to read. That is the standing scorebug rule proving itself
+again rather than an argument worth re-running.
+
+**But the logic he is reaching for is sound and nothing here has used it.** The down cannot
+go 1st → 3rd, so between a clip showing one down and a clip showing the next, *exactly one*
+play happened. That is a counting constraint over the whole film, not a per-clip classifier,
+and it is a different thing from the `--clock` prompt comparison (which asked only whether
+the overlay helped judge one clip in isolation, and found it did not). Its real prize is
+that it would catch **silent under-detection** — the failure that cost him most of a game
+this week and announced itself only when he noticed.
+
+**The orange marker is the version that survives the rule**, because it is on the field, not
+in the broadcast. And the point is not to read its number — it is that the chain crew walks
+it to the new line of scrimmage after every play, so **"the marker moved" is "a play
+happened"**, with no OCR at all. That is the owner's son's "you can tell when the referee
+spots the ball", aimed at something safety-orange against a dark track instead of a brown
+ball on grass. Worth remembering that the ball was measured to be one of the *least*
+conspicuous objects in the frame; this is close to the most.
+
+**First measurement, free, no API spend** (`scratchpad/orange.js`, 45 s of live football at
+1 fps, 1280×720 native, connected-component search for red≫green≫blue):
+
+- The marker is **plainly visible to the eye** — full-frame (710, 270) at 1h40m is a clean
+  example, with a second orange marker near (955, 300).
+- Automatically, it is **found in 33 of 45 frames**, missing in the rest to occlusion by
+  players and the crowd.
+- It is **small**: blobs of 12–74 px, 2–14 px wide. A persistent one sits at x≈618 y≈278
+  for twenty seconds, another at x≈371 y≈322, and several more come and go.
+- **The several orange things are not decoys — they are the chain crew**, which the owner
+  pointed out at once ("those are people holding the sticks"). There are three: the two
+  chain poles and the down marker, all orange-topped, all held by people standing on one
+  sideline. The first write-up of this measurement called them noise; that was wrong, and
+  it makes the lead stronger rather than weaker.
+- So "the biggest orange blob" is **not** a tracker — its x jumps 1037 → 993 → 365 → 618 as
+  the title switches between the three sticks. But three orange marks in a row at much the
+  same height along one touchline is a far more distinctive signature than any one of them,
+  and it comes with **a free scale reference: the two chain poles are exactly ten yards
+  apart.** Pick the sticks out as a group, and the down marker is the one that moves every
+  play while the chain stays put until a first down.
+
+**Not yet shipped, and not yet worth believing.** This is one 45 s window on one film. What
+it would take next: track a single blob through dropouts, check its x genuinely steps between
+plays and holds still during them, and — the real test — see whether it survives a film where
+the camera is tighter or the far sideline is out of shot. Do that before any of it reaches
+`detect()`.
+
 ## What the other programs do, and why none of it transfers
 
 Five primary sources were read in full. The short answer is that **nobody solves this
