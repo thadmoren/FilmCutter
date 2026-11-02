@@ -151,7 +151,7 @@
 <div class="wrap film">
   <h1>🎬 Film Cutter</h1>
   <div class="sub">Open a full game — get every play, with the dead time cut out.
-    <span class="ver">v2026.11.1.3</span></div>
+    <span class="ver">v2026.11.1.4</span></div>
   <div class="family">Same family as <a href="../FormationDrawer/">🏈 Formation Drawer</a></div>
 
     <p class="film-note">Turns a full game into one video per play, from 5 s before the snap to 5 s after
@@ -228,7 +228,13 @@ const PROM_LO = 0.45, PROM_HI = 0.15;  // how far a bump must rise clear of the 
 const EDGE = 0.4;                  // a play runs while it is this far up its own bump
 const FOOT = 0.12, FOOT_MAX = 8;   // and starts where it first rose this far, up to 8 s earlier
 const JOIN = 0;                    // clips this close together are one stretch of film
-const PLAY_LO = 6, PLAY_HI = 4;    // seconds a bump must last to be a play, across the slider
+const PLAY_LO = 5, PLAY_HI = 3;    // seconds a bump must last to be a play, across the slider
+// Bumped whenever a change to detect() would give a different answer on film already
+// scanned. A film is stored with the version that found its plays; on a later visit a
+// stale one is re-detected from the samples it already has — no rescan, it is instant —
+// because otherwise the owner's finished games keep the old rule for ever and the only
+// way out is a slider buried in a folded-away panel. See PLAY_LO above for why this exists.
+const DET_VER = 2;
 // Asking a vision model whether a clip is football is the only thing that reaches the junk
 // inside live play — huddles, the walk-up, milling about between downs. Measured on the
 // 3h19m game against all 222 clips judged by eye: at AI_CONF it drops 46 clips and loses
@@ -388,8 +394,9 @@ function changed(a, b) {           // per mille of pixels whose luma moved notic
 function save() {
   if (!fKey) return;
   try { localStorage.setItem(fKey, JSON.stringify({motion, red, lum, men, plays, edited,
-    sens: fSens.value, ai: [...aiSaid]})); } catch (e) {}
+    sens: fSens.value, ai: [...aiSaid], detVer: DET_VER})); } catch (e) {}
 }
+let reFound = 0;            // plays gained when a stale film was re-detected on load
 function restore() {
   let d = null;
   try { d = JSON.parse(localStorage.getItem(fKey) || "null"); } catch (e) {}
@@ -401,8 +408,19 @@ function restore() {
   aiSaid.clear();
   for (const [t, a] of (d && d.ai) || []) aiSaid.set(+t, a);
   if (d && d.sens) fSens.value = d.sens;
-  if (motion.length) { const r = detect(); det = r.det; if (!edited) plays = r.plays; }
+  // A film found with an older rule is found again, from the samples already stored.
+  // This throws away the clips that were dropped on it, which is the right trade: the
+  // list itself is different now, so those decisions were about clips that no longer
+  // exist. Claude's answers are keyed by the second and survive, so the marks come back.
+  const stale = !!(d && motion.length && (d.detVer || 1) !== DET_VER);
+  reFound = 0;
+  if (motion.length) {
+    const r = detect(); det = r.det;
+    if (stale) reFound = r.plays.length - plays.length;
+    if (!edited || stale) { plays = r.plays; edited = false; }
+  }
   else det = null;
+  if (stale) save();                 // stamp the new version so this happens once, not every load
 }
 
 /* --- scanning --- */
@@ -1313,6 +1331,7 @@ fv.addEventListener("loadedmetadata", () => {
   const partial = done() && done() * STEP < fv.duration - STEP;
   fScan.textContent = partial ? "Continue scan" : "Find plays";
   say(partial ? `Checked the first ${fmt(done() * STEP)} of ${fmt(fv.duration)} earlier. Cut into clips picks up where it stopped.`
+      : reFound > 0 ? `Looked again with the improved play finder and found ${reFound} more — ${plays.length} plays. Cut into clips saves them.`
       : plays.length ? `${plays.length} plays found earlier for this video. Cut into clips saves them.`
       : `${fmt(fv.duration)} of film. Now click Cut into clips. Finding the plays takes a few minutes per hour of film.`);
 });

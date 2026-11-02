@@ -37,9 +37,15 @@ against the whole game, so a quiet stretch isn't measured by the standard of a b
 
 The stir that counts is **the long one**. Film throws up a stir every few seconds — the
 teams gathering, the huddle breaking, the walk to the line, the camera swinging round —
-and all of those are over in three or four seconds. A play isn't: the snap, the tackle
-and everyone getting up takes eight to fourteen, kickoffs included. That is how it picks
-the snap out.
+and most of those are over in two or three seconds. A play lasts longer: the snap, the
+tackle and everyone getting up. That is how it picks the snap out.
+
+How long a play looks depends on the camera, so this is the number most likely to need
+nudging on a film it hasn't seen. **If a game comes back with far fewer clips than it
+should** — as a rule there's about one per 25 seconds of football, so an hour of film
+with under fifty is suspect — **push Sensitivity to the right.** It re-finds the plays
+straight away, with no rescan. (When the play finder itself improves, a game you've
+already scanned picks the change up by itself the next time you open it, and says so.)
 
 Each clip starts **five seconds before the snap**, so you see the teams set and the ball
 go, and ends five seconds after the whistle.

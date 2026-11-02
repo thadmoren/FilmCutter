@@ -49,9 +49,66 @@ breaking, the walk up to the line, the camera re-framing between plays — and t
 all 3–5 s long. The snap is the long one: the play, the tackle and everybody getting up
 runs 8–14 s. Measured on NFHS film, every play checked by eye came out 8–14 s and every
 walk-up and camera sweep 3–5 s, with nothing in between. So a bump is a play when it
-lasts `minPlay` seconds, `PLAY_LO` 6 down to `PLAY_HI` 4 across the slider. That one
+lasts `minPlay` seconds, `PLAY_LO` 5 down to `PLAY_HI` 3 across the slider. That one
 test does the work three earlier attempts could not. A kickoff is no different, by the
 way — it is 10–14 s like any other play; what is long is the replay that follows it.
+
+**"8–14 s with nothing in between" was true of one film and is not true of football**,
+and it cost the owner most of a game before it was caught. `PLAY_LO`/`PLAY_HI` were 6/4
+— `minPlay` 5.0 at the default — until 2026-11-01, when he cut **Puyallup vs Bellevue**
+(2 h 43 m) and reported "last run was bad, missed plays… after 15, there's a lot missing".
+Clip 15 is at 18:21 and clip 16 at 21:40: a three-minute hole, and twelve more like it.
+
+The numbers, taken from his own stored scan in the browser:
+
+| | old NFHS film | Puyallup film |
+|---|---|---|
+| clips per hour at the default | 71 | **49** |
+| holes over 90 s between clips | — | **13** |
+| median motion | 103 | **43** |
+
+**The holes are live football, not ad breaks.** `men` inside them runs 22–29 against a
+film median of 25 and 27 in the stretches that worked — a full field of players, every
+time. The owner's own guess, that the commercials in this broadcast confused it, is
+wrong and was worth checking: the commercials are real (221 break seconds, bright runs
+all through) but they are not where the plays went.
+
+**The whole loss is one threshold against whole-second bump lengths.** Instrumenting the
+bump loop over the 18–22 m hole: four bumps with prominence 69, 157, 190 and 265 against
+a requirement of 10–56 — passing the prominence test easily — were thrown out for being
+**4 s long when `minPlay` was 5**. Pinning the two levers apart settles it:
+
+| | `minPlay` 4.5 | `minPlay` 4.0 |
+|---|---|---|
+| clips | 147 | **205** |
+| holes over 90 s | 9 | **4** |
+
+and loosening prominence instead (`need` 0.30 → 0.15) moves 147 to just 155. Lengths are
+whole seconds, so **the only thing that matters is whether the bar sits above or below 4**,
+and 5.0 sat on the wrong side of it for this camera. This is also why the Sensitivity
+slider looked broken on that film: 0.5 through 0.9 all give 134–153 clips and only the
+very end of its travel, where `minPlay` reached 4.0, jumped to 206.
+
+At 5/3 the default `minPlay` is 4.0. Puyallup goes **134 → 193 clips, 49 → 71 per hour,
+13 holes → 5**. Regression on the old film, labels pinned to the original 236-clip run
+(this matters — `final2.js` derives its labels from the default run, so changing a
+detection constant silently renumbers them and the test becomes meaningless): **236 → 253
+clips and 0 of the 32 hand-labelled plays lost or missed, at every slider position.** The
+cost is 17 more clips a game there, which the head count and the AI pass already handle.
+
+The lesson is the one this file keeps relearning from the other end: a number measured on
+one film is a property of that film's camera. 8–14 s was never football, it was that
+tripod. Expect the next film to break something else.
+
+**`DET_VER` exists because of this.** A film is stored with the version of `detect()` that
+found its plays, and a stale one is re-detected from the samples it already holds on the
+next load — instant, no rescan — and the page says how many more it found. Without it a
+game already scanned keeps the old rule for ever, and the only cure is nudging a
+Sensitivity slider that lives inside a folded-away panel the owner has no reason to open.
+Re-detecting discards that film's dropped clips, which is right: the list is a different
+length, so those decisions were about clips that no longer exist. `aiSaid` is keyed by
+the second, so Claude's answers and the `?` marks survive. Bump `DET_VER` on any change
+to `detect()` that would answer differently on film already scanned.
 
 Its span is measured down to `lo`, the local lull, **not** to the higher of its own two
 shoulders. A play that runs straight into something else — a kickoff with the replay cut
