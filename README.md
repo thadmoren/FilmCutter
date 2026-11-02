@@ -54,9 +54,10 @@ than running into it; clips are never glued together to make the lead-in fit. If
 has been cut in right before the snap, the lead-in will show a second or two of it rather
 than give up and start late.
 
-A clip that runs much longer than the rest is usually **two or three plays in a row** that
-ran together, not one play with a long tail. They're left whole on purpose: trimming them
-to a tidy length would cut the last play off the end.
+**One play per clip.** Where two snaps come close together they still get a clip each, as
+long as they're at least ten seconds apart. Closer than that is treated as one play the
+finder spotted twice. If you ever see a long play arriving cut in half, that's the number
+to change — say so and it moves.
 
 It also **counts the players out on the grass**. Football means a dozen or more men
 standing on turf; a banner, an empty field, the team lined up along the touchline at
@@ -86,14 +87,17 @@ it's sure aren't football, before anything gets cut. On a full game that's about
 junk gone, and in testing it didn't drop a single real play. Nothing is deleted — **Keep
 all** brings everything back. No key, no charge, and the app behaves exactly as before.
 
-**It also tells you what it's unsure about.** Claude answers on every clip and says how sure
-it is; it only sets one aside when it's certain, because being less strict than that starts
-dropping real plays. The rest of its doubts aren't wasted any more — those clips get an
-amber ring and a **?**, and **Only what Claude doubts** shows just those. On a full game
-that's about fifty pictures to glance through instead of two hundred, and most of what's in
-there is the timeouts and penalties. Nothing is dropped for you; you still decide. Its
-answers are also kept now, so closing the tab and cutting again costs nothing the second
-time.
+**It drops everything it thinks isn't football** — penalties being walked off, timeouts,
+pregame, halftime, the camera on the crowd. That clears almost all the junk, and the price
+is that **about one real play in fourteen goes with it**. That's a deliberate trade and it
+can be changed; it's not a bug.
+
+**So check the ones with a ?.** Claude says how sure it is about each call, and any clip it
+dropped without being sure gets an amber ring and a **?**. That's where a real play gets
+thrown out. Tick **Only Claude's shaky calls** to see just those, and click any that is
+actually football to put it back. Nothing is ever deleted — **Keep all** brings back
+everything. Its answers are kept between visits, so closing the tab and cutting again costs
+nothing the second time.
 
 This one is optional and costs a little money, because it needs your own API key from
 [console.anthropic.com](https://console.anthropic.com) — about **$1.50 for a whole game**.

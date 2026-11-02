@@ -181,6 +181,36 @@ and persisted; plays saved by an older version have none and fall back to `p.s +
 this also fixes a pre-existing version of the same bug: a clip whose lead-in had been
 squeezed by a replay already had `s + PRE` past its own foot.
 
+**`SPLIT` 10 — one play per clip, and this one has a real cost on the old film.** The owner,
+after watching a cut: *"all the plays should be split into their own clip."* Inside a welded
+clip the feet sit a median of **8 s apart** (spread: 18 under 6 s, 17 at 6–9, 18 at 10–14,
+8 at 15–19, 2 beyond), and the old film's labelled snaps never came closer than **17 s**, so
+on that evidence almost all of it is one play found twice. Contact sheets at 4 s spacing
+could not settle it — the camera travels from the 50 to the end zone inside one welded clip,
+which reads equally as a long return or as two snaps. Asked directly, with both readings in
+front of him, the owner said his offence gets to the line fast and 8–14 s really is two
+snaps on his film. So bumps split into separate clips at **10 s foot-to-foot**.
+
+**Measured, and the old film does not like it**: 253 → **378 clips**, and **1 of the 32
+hand-labelled plays is now set aside** (by the head count, whose median moves when the clip
+population changes), against 0 before. That is `JOIN` being undone — the note below records
+that joining took the old game 340 → 236 *without* losing a snap, so most of what `SPLIT`
+re-separates there are the fragments `JOIN` exists to glue. On Puyallup the same setting is
+far gentler (193 → ~221) because that film has fewer tight bump clusters. Shipped because
+the owner judged his own film and this is a documented knob: **if a long play ever comes
+back cut in half, raise `SPLIT`** — 17 restores the old film's behaviour almost exactly.
+
+**`AI_CONF` is 0: everything the model calls not-football is dropped.** The owner: *"there
+should be no clips that are penalty walk offs, timeouts or pregame, halftime."* Offered the
+measured trade explicitly — 96 of 97 junk caught against **9 of 125 real plays lost**, about
+one in fourteen — he chose it. This reverses the earlier decision recorded above ("I don't
+want to lose real plays"), and it reverses it *with the number in front of him*, which is
+the only way this should ever move. The mitigation is that `AI_SURE` (0.90, the old
+`AI_CONF`) now drives the `?` mark, so the ring no longer means "a kept clip worth a look"
+but **"this drop was shaky, rescue it if it is a play"** — shown on dropped tiles too, which
+is the whole point of it now. To go back: `AI_CONF` 0.90 is lossless, 0.80 is the middle
+(73 of 97 junk, 2 plays lost).
+
 **The long clips are not a tail problem and must not be trimmed.** He guessed they ran long
 at the end; measured, **12 of the 13 Puyallup clips over 40 s contain 2–4 bumps** — they are
 whole plays welded together by `JOIN`, not one play with a long tail. Cutting them back to a

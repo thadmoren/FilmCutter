@@ -129,18 +129,16 @@
   .pick .go { font:inherit; color:var(--chip-text); background:transparent; border:0; padding:0 3px;
     border-radius:5px; cursor:pointer; }
   .pick .go:hover { background:var(--chip-bg); color:var(--text); }
-  /* Claude answers on every clip with how sure it is, and only >= AI_CONF is set aside,
-     because below that it starts costing real plays. The rest was thrown away — and in the
-     labelled game 20 of the 97 junk clips sit in that band, named as timeouts and penalties
-     in the model's own words, which is exactly the junk the owner saw survive a full run.
-     So mark them instead of dropping them: his eye is the threshold, and he looks through
-     fifty ringed tiles rather than two hundred. */
+  /* Claude answers on every clip with how sure it is. Everything it calls not-football is
+     dropped now (AI_CONF 0, the owner's choice with the cost in front of him), so the ring
+     marks the drops it was NOT sure of — under AI_SURE. Those are where a real play gets
+     thrown out, about one in fourteen, and clicking one puts it back. The ring shows on
+     dropped tiles too, which is the whole point of it now. */
   .pick figure.doubt { border-color:var(--warn); }
   .pick figure.doubt::before { content:"?"; position:absolute; top:3px; right:3px; z-index:1;
     width:17px; height:17px; border-radius:50%; background:var(--warn); color:var(--bg);
     font-size:.72rem; font-weight:700; line-height:17px; text-align:center; pointer-events:none; }
   .pick figure.off { border-color:var(--err); }
-  .pick figure.off::before { display:none; }
   .pick figure.off img, .pick figure.off .ph { opacity:.25; }
   .pick figure.off figcaption { color:var(--err); }
   .pick figure.off::after { content:"dropped"; position:absolute; inset:0; display:grid; place-items:center;
@@ -151,7 +149,7 @@
 <div class="wrap film">
   <h1>🎬 Film Cutter</h1>
   <div class="sub">Open a full game — get every play, with the dead time cut out.
-    <span class="ver">v2026.11.1.6</span></div>
+    <span class="ver">v2026.11.1.7</span></div>
   <div class="family">Same family as <a href="../FormationDrawer/">🏈 Formation Drawer</a></div>
 
     <p class="film-note">Turns a full game into one video per play, from 5 s before the snap to 5 s after
@@ -174,7 +172,8 @@
       <div class="pickbar">
         <strong id="fPickCount"></strong>
         <span class="hint">Three frames across each play, cycling — a still can't tell a snap from a huddle.
-          Click any you don't want. A <b>?</b> is one Claude suspects isn't football but wasn't sure enough to drop.</span>
+          Click any you don't want — or any dropped one you want back. A <b>?</b> is a call Claude wasn't sure about,
+          so check those: that's where a real play gets thrown out.</span>
         <label class="chk" id="fDoubtWrap" hidden><input type="checkbox" id="fDoubtOnly"> <span id="fDoubtLab"></span></label>
         <button class="sm" id="fPickAll" type="button">Keep all</button>
       </div>
@@ -234,19 +233,36 @@ const PLAY_LO = 5, PLAY_HI = 3;    // seconds a bump must last to be a play, acr
 // stale one is re-detected from the samples it already has — no rescan, it is instant —
 // because otherwise the owner's finished games keep the old rule for ever and the only
 // way out is a slider buried in a folded-away panel. See PLAY_LO above for why this exists.
-const DET_VER = 4;
+const DET_VER = 5;
 // How far back to reach for the huddle breaking. PRE alone opens on the teams already set;
 // the owner wants the call and the walk-up: "these clips… don't show huddle breaks". Applied
 // as a second pass once the clips are settled, so it can never glue two plays together.
 const LEAD = 12;
+// Two bumps this far apart (foot to foot) are two plays and get a clip each; closer than
+// this is one play the detector found twice. The owner's call on his own film, asked
+// directly: his offence gets to the line fast, so 8-14 s really is two snaps there. The
+// old film's labelled snaps never came closer than 17 s, so this is the looser of the two
+// readings — if a long play ever comes back cut in half, this is the number to raise.
+const SPLIT = 10;
 // Asking a vision model whether a clip is football is the only thing that reaches the junk
 // inside live play — huddles, the walk-up, milling about between downs. Measured on the
-// 3h19m game against all 222 clips judged by eye: at AI_CONF it drops 46 clips and loses
-// none of the 125 snaps, and together with the head count that is 48 of 97 junk clips off,
-// lossless. Below AI_CONF it starts costing real plays, so the bar stays high. It is off
-// until the owner turns it on, needs his own API key, and the page works without it.
+// 3h19m game against all 222 clips judged by eye.
+//
+// AI_CONF was 0.90 — the lossless bar, 46 of 97 junk clips off and not one of the 125
+// snaps. The owner has now chosen the other end of that trade, asked directly and with the
+// measured cost in front of him: "there should be no clips that are penalty walk offs,
+// timeouts or pregame, halftime." At 0 every clip the model calls not-football goes, which
+// on the labelled game is **96 of 97 junk caught and 9 of 125 real plays lost** — about one
+// play in fourteen. Nothing is deleted, "Keep all" brings it all back, and the shaky drops
+// are marked (see AI_SURE) so they can be rescued one click at a time. To go back to
+// lossless, put this to 0.90; 0.80 is the middle setting (73 of 97 junk, 2 plays lost).
 const AI_MODEL = "claude-opus-5-5";
-const AI_CONF = 0.90;              // only set aside junk the model is this sure of
+const AI_CONF = 0;                 // set aside anything the model calls not-football
+// The old AI_CONF, kept as the bar for *marking*. A clip dropped below this is one the
+// model was not sure about, and now that everything gets dropped, that is exactly what is
+// worth showing him: the `?` is no longer "have a look at this one you kept", it is "this
+// drop is shaky, rescue it if it is a play". That is the mitigation for the 9 in 125.
+const AI_SURE = 0.90;
 const AI_W = 640, AI_H = 360;      // it needs this much picture; 320x180 was never tested
 const AI_CONC = 6;                 // requests in flight at once
 const FF_RECYCLE = 40;             // clips per ffmpeg instance before it is restarted; its
@@ -605,6 +621,7 @@ function detect() {
   // set and the ball go — and POST after the whistle. It cannot start before the
   // previous play finished.
   const out = [];
+  let lastFoot = -1e9;                  // foot of the last bump taken into a clip
   cores.forEach((g, k) => {
     const floor = Math.max(0, k ? cores[k - 1].e + POST : 0);
     let s = Math.max(floor, g.s - PRE);
@@ -631,7 +648,9 @@ function detect() {
     // the lead-in in front of it is no longer a fixed PRE, so `s + PRE` stops being the
     // snap. Everything that wants the snap (the picker's three frames, the AI pass, the
     // head count) reads `f`, not the clip start.
-    if (p && s - p.e <= JOIN) p.e = Math.max(p.e, e); else out.push({s, e, f: g.s, call: ""});
+    if (p && s - p.e <= JOIN && g.s - lastFoot < SPLIT) p.e = Math.max(p.e, e);
+    else out.push({s, e, f: g.s, call: ""});
+    lastFoot = g.s;
   });
   // Reach further back, to the huddle breaking. This is a SECOND pass, run after the clips
   // and their joins are settled, and that ordering is the whole safety of it: extending a
@@ -645,7 +664,7 @@ function detect() {
     let s = Math.max(room, c.f - LEAD, 0);
     for (let i = Math.round(s / STEP); i < c.f / STEP; i++)   // same replay guard as above
       if (brk[i] && c.f - (i + 1) * STEP >= PRE) s = (i + 1) * STEP;
-    c.s = Math.min(c.s, s);
+    c.s = s;          // not min(): once clips split, the pre-pass start can overlap the one before
   });
   // Nobody out on the grass, nobody playing football. Counting men standing in turf at
   // the snap is the one thing found that tells football from the camera on a banner, an
@@ -787,9 +806,11 @@ function cyc(shot) {
   shot.classList.toggle("cyc", full);
 }
 
-// A clip Claude called "not football" that is still in the cut: it was not sure enough to
-// set aside (AI_CONF), or "Keep all" brought it back. Worth a mark, never worth a drop.
-const unsure = p => { const a = aiSaid.get(snapAt(p)); return !!a && !a.play && !p.off; };
+// A clip Claude called "not football" without being sure of it. Everything it calls junk is
+// dropped now, so these are the shaky drops — the ones most likely to be a real play thrown
+// out, and the only defence against that is showing them to him. Marked whether dropped or
+// kept, so "Keep all" doesn't lose track of which were doubtful.
+const unsure = p => { const a = aiSaid.get(snapAt(p)); return !!a && !a.play && a.confidence < AI_SURE; };
 
 function countPick() {
   const k = kept().length;
@@ -797,7 +818,7 @@ function countPick() {
     ? `${k} play${k === 1 ? "" : "s"}` : `${k} of ${plays.length} plays kept`;
   if (!exporting) fExp.textContent = k && k < plays.length ? `Cut ${k} into clips` : "Cut into clips";
   const d = plays.filter(unsure).length;
-  fDoubtLab.textContent = `Only what Claude doubts (${d})`;
+  fDoubtLab.textContent = `Only Claude's shaky calls (${d})`;
   fDoubtWrap.hidden = !d && !fDoubtOnly.checked;
 }
 function renderPick() {
@@ -810,7 +831,9 @@ function renderPick() {
     if (only && !q) return;
     const fig = document.createElement("figure");
     fig.tabIndex = 0;
-    fig.title = q ? "Claude suspects this isn't football. Click to drop it." : "Click to drop this one";
+    fig.title = q ? (p.off ? "Claude dropped this but wasn't sure. Click to keep it."
+                           : "Claude suspects this isn't football. Click to drop it.")
+                  : "Click to drop this one";
     if (q) fig.classList.add("doubt");
     if (p.off) fig.classList.add("off");
     const shot = document.createElement("div");
