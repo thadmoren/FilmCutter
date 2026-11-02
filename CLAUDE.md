@@ -146,6 +146,30 @@ film (the owner's words: "snap backwards 5 seconds is great"). Two clips join on
 genuine overlap: one that merely backs up to where the last one ended is the next play,
 not more of the last one.
 
+**The lead-in beats the replay rule, and that is a correction.** Backing up across a
+replay was forbidden outright — the start was shoved forward to the end of the replay —
+and where the director cuts a replay in just before the next snap, which happens all
+game, the clip opened *on the ball going*. The owner found it himself and diagnosed it
+correctly: "some of the ones in the first game the film started right at the snap, but I
+think that's because the replay butted up against the next play." Measured on the old
+film: **27 of 253 clips had less than the full `PRE`, 24 of them the replay rule, 19
+opening within a second of the foot of the play.** Now a replay is stepped over only
+while a full `PRE` still survives beyond it, so in the tight case the lead-in simply
+contains a second or two of the previous play's replay — which costs nothing, while
+missing the snap costs the clip. Old film **19 → 3** opening at the snap, same 253 clips,
+none of the 32 hand-labelled plays lost; Puyallup **6 → 4** (that broadcast carries few
+replay badges, which is why he saw it on the first game and not the second).
+
+The 3–4 left per game are the *previous clip's* floor, not replays: a clip may not start
+before the one before it ended. Fixing those means letting a lead-in eat into the
+previous clip's `POST` tail, which makes the two overlap in time, which `JOIN` then
+merges — losing a play to save a second. Left alone deliberately; they still open at the
+foot of the bump, which is itself a few seconds before the ball.
+
+Note what a squeezed start also breaks: `snapAt(p)` is `p.s + PRE`, so on a clip that
+lost its lead-in the picker's three frames **and the frames the AI pass judges** are all
+taken late. Anything that shortens the lead-in quietly moves the pictures too.
+
 **Replays**: `red[i]` is the per-mille of bright-red pixels in the top-right corner
 (right 25 %, top 25 %), for the NFHS "replay" badge. A sample is replay when it is > 10
 above the game's median (so always-red seats or scoreboards don't count), median-of-3.

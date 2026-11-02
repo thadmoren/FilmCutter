@@ -48,7 +48,8 @@ straight away, with no rescan. (When the play finder itself improves, a game you
 already scanned picks the change up by itself the next time you open it, and says so.)
 
 Each clip starts **five seconds before the snap**, so you see the teams set and the ball
-go, and ends five seconds after the whistle.
+go, and ends five seconds after the whistle. If a replay has been cut in right before the
+snap, the lead-in will show a second or two of it rather than give up and start late.
 
 It also **counts the players out on the grass**. Football means a dozen or more men
 standing on turf; a banner, an empty field, the team lined up along the touchline at
